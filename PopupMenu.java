@@ -1,0 +1,264 @@
+import javax.swing.*;
+import java.util.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.datatransfer.*;
+import net.miginfocom.swing.MigLayout;
+
+class PopupMenu extends JPopupMenu
+{
+    private static final long serialVersionUID = 102;
+
+    public PopupMenu( JFrame frame, final JTable table )
+    {
+        int rowCount = table.getRowCount();
+
+//        JMenuItem openLinks      = new JMenuItem( "Open Links" );
+        JMenuItem copyLinks      = new JMenuItem( "Copy Links" );
+        JMenuItem copyTitles     = new JMenuItem( "Copy Titles" );
+        JMenuItem clearSelection = new JMenuItem( "Clear Selection" );
+        JMenuItem editTitles     = new JMenuItem( "Edit Titles" );
+        JMenuItem deleteTag      = new JMenuItem( "Delete Tag" );
+
+        if( rowCount == 0 )
+        {
+            copyLinks.setEnabled( false );
+            copyTitles.setEnabled( false );
+            clearSelection.setEnabled( false );
+            deleteTag.setEnabled( false );
+            editTitles.setEnabled( false );
+
+        }
+
+        CopyListener copyListener = new CopyListener( frame, table );
+        copyLinks.addActionListener( copyListener );
+        copyTitles.addActionListener( copyListener );
+
+        clearSelection.addActionListener( new ActionListener() {
+            public void actionPerformed( ActionEvent e )
+            {
+                table.clearSelection();
+            }
+        } );
+
+        editTitles.addActionListener( new EditTitlesListener( frame, table ) );
+        deleteTag.addActionListener( new DeleteTagListener( frame, table ) );
+
+        add( copyLinks );
+        add( copyTitles );
+        addSeparator();
+        add( clearSelection );
+        addSeparator();
+        add( editTitles );
+        add( deleteTag );
+    }
+
+    public static void installEscapeCloseOperation( final JDialog dialog )
+    { 
+        final KeyStroke escapeStroke = 
+            KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ); 
+        final String dispatchWindowClosingActionMapKey = 
+            "com.spodding.tackline.dispatch:WINDOW_CLOSING"; 
+
+        Action dispatchClosing = new AbstractAction() { 
+            private static final long serialVersionUID = 103;
+
+            public void actionPerformed(ActionEvent event) { 
+                dialog.dispatchEvent(new WindowEvent( 
+                    dialog, WindowEvent.WINDOW_CLOSING 
+                )); 
+            } 
+        }; 
+        JRootPane root = dialog.getRootPane(); 
+        root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put( 
+            escapeStroke, dispatchWindowClosingActionMapKey 
+        ); 
+        root.getActionMap().put(
+            dispatchWindowClosingActionMapKey, dispatchClosing ); 
+    }
+}
+
+class CopyListener implements ActionListener
+{
+    private JFrame frame = null;
+    private JTable table = null;
+
+    public CopyListener( JFrame frame, JTable table )
+    {
+        this.frame = frame;
+        this.table = table;
+    }
+
+    public void actionPerformed( ActionEvent e )
+    {
+        String newLine = String.format( "%n" );
+
+        String value = "";
+        int selectedRowCount = table.getSelectedRowCount();
+
+        String command = e.getActionCommand();
+        for( int i = 0; i < table.getRowCount(); i++ )
+        {
+            if( selectedRowCount == 0 || table.isRowSelected( i ) )
+            {
+                Hyperlink link = 
+                    (Hyperlink) table.getValueAt( i, ResultsModel.LINK_COL );
+                if( command.equals( "Copy Links" ) )
+                    value += link.getURL().toString() + newLine;
+                else if( command.equals( "Copy Titles" ) && 
+                         link.getTitle() != null )
+                    value += link.getTitle() + newLine;
+            }
+        }
+
+        StringSelection stringSelection = new StringSelection( value );
+        Clipboard clipboard = 
+            Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents( stringSelection, null );
+    }
+}
+
+class EditTitlesListener implements ActionListener
+{
+    private JFrame frame = null;
+    private JTable table = null;
+
+    public EditTitlesListener( JFrame frame, JTable table )
+    {
+        this.frame = frame;
+        this.table = table;
+    }
+
+    public void actionPerformed( ActionEvent e )
+    {
+        JPanel panel = new JPanel( new MigLayout( "", "", "" ) );
+        JSeparator separator = new JSeparator( SwingConstants.HORIZONTAL );
+
+        int selectedRowCount = table.getSelectedRowCount();
+
+        for( int i = 0; i < table.getRowCount(); i++ )
+        {
+            if( selectedRowCount == 0 || table.isRowSelected( i ) )
+            {
+                Hyperlink link = (Hyperlink) table.getValueAt(
+                    i, ResultsModel.LINK_COL );
+
+                final String url = link.getURL().toString();
+
+                JLabel linkLabel = new JLabel( url );
+                final JTextField titleInput = new JTextField( link.getTitle(), 50 );
+                final ResultsModel resultsModel = (ResultsModel) table.getModel();
+
+                JButton fetchButton = new JButton( "Fetch" );
+                fetchButton.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent e )
+                    {
+                        String title = resultsModel.fetchTitle( url );
+                        titleInput.setText( title );
+                    }
+                } );
+
+                JButton updateButton = new JButton( "Update" );
+                updateButton.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent e )
+                    {
+                        String newTitle = titleInput.getText();
+                        resultsModel.updateTitle( url, newTitle );
+                    }
+                } );
+
+                JPanel buttonsPanel = new JPanel( new FlowLayout() );
+                buttonsPanel.add( fetchButton );
+                buttonsPanel.add( updateButton );
+
+                panel.add( linkLabel,    "wrap" );
+                panel.add( titleInput,   "grow,wrap" );
+                panel.add( buttonsPanel, "wrap" );
+                panel.add( separator,    "wrap" );
+            }
+        }
+
+        JScrollPane scrollpane = new JScrollPane( panel );
+        JDialog dialog = new JDialog( frame, "Edit Titles", true );
+
+        PopupMenu.installEscapeCloseOperation( dialog );
+        
+        dialog.getContentPane().add( scrollpane );
+        dialog.pack();
+        dialog.setVisible( true );
+    }
+
+}
+
+class DeleteTagListener implements ActionListener
+{
+    private JFrame frame = null;
+    private JTable table = null;
+
+    public DeleteTagListener( JFrame frame, JTable table )
+    {
+        this.frame = frame;
+        this.table = table;
+    }
+
+    public void actionPerformed( ActionEvent e )
+    {
+        JPanel panel = new JPanel( new MigLayout( "", "", "" ) );
+
+        int selectedRowCount = table.getSelectedRowCount();
+        HashMap<String,Boolean> selectedTagsHash = new HashMap<String,Boolean>();
+
+        for( int i = 0; i < table.getRowCount(); i++ )
+        {
+            if( selectedRowCount == 0 || table.isRowSelected( i ) )
+            {
+                Tags tags = (Tags) table.getValueAt( i, ResultsModel.TAGS_COL );
+
+                for( int j = 0; j < tags.size(); j++ )
+                    selectedTagsHash.put( tags.get( j ), new Boolean( true ) );
+            }
+        }
+
+        TreeSet<String> selectedTagsSet = new TreeSet<String>();
+        selectedTagsSet.addAll( selectedTagsHash.keySet() );
+
+        String[] selectedTags = 
+            selectedTagsSet.toArray( new String[ selectedTagsSet.size() ] );
+
+        final JDialog dialog = new JDialog( frame, "Delete Tag", true );
+        final JComboBox<String> deleteTagsSelector = 
+            new JComboBox<String>( selectedTags );
+        JButton deleteButton = new JButton( "Delete" );
+        deleteButton.addActionListener( new ActionListener() {
+            public void actionPerformed( ActionEvent e )
+            {
+                ResultsModel resultsModel = (ResultsModel) table.getModel();
+
+                String selectedTag = 
+                    (String) deleteTagsSelector.getSelectedItem();
+
+                int selectedRowCount = table.getSelectedRowCount();
+                for( int i = 0; i < table.getRowCount(); i++ )
+                {
+                    if( selectedRowCount == 0 || table.isRowSelected( i ) )
+                        resultsModel.deleteLinkTag( selectedTag, i );
+                }
+
+                deleteTagsSelector.removeItem( selectedTag );
+                if( deleteTagsSelector.getItemCount() == 0 )
+                    dialog.dispose();
+            }
+        } );
+
+        panel.add( deleteTagsSelector );
+        panel.add( deleteButton );
+
+        JScrollPane scrollpane = new JScrollPane( panel );
+
+        PopupMenu.installEscapeCloseOperation( dialog );
+        
+        dialog.getContentPane().add( scrollpane );
+        dialog.pack();
+        dialog.setVisible( true );
+    }
+}
