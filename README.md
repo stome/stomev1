@@ -1,7 +1,7 @@
 stome
 =====
 
-Stome is a stand-alone Java link tagging program, somewhat like the web-app Delicious.
+Stome is a stand-alone link tagging program written in Java, somewhat like the web-app Delicious.
 
 COMPILE
 "./build.sh" (minus the parentheses) in the project directory should build Stome.jar.
