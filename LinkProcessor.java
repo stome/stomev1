@@ -315,7 +315,7 @@ public class LinkProcessor extends Thread
 
     private void dbAddLink( String linkKey, int shareCount )
     {
-        if( shareCount <= 0 )
+        if( shareCount < 0 )
             return;
 
         String url = allUrls.get( linkKey );
