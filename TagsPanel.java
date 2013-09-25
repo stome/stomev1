@@ -1,7 +1,14 @@
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
 import net.miginfocom.swing.MigLayout;
+
+import java.awt.Component;
+import java.awt.Toolkit;
+
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.JScrollPane;
 
 public class TagsPanel extends JPanel
 {

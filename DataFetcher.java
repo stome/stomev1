@@ -1,6 +1,13 @@
-import java.io.*;
-import java.net.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.net.URLConnection;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 class DataFetcher extends Thread
 {

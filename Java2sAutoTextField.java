@@ -35,8 +35,12 @@
  */
 
 import java.util.List;
+
 import javax.swing.JTextField;
-import javax.swing.text.*;
+
+import javax.swing.text.PlainDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
 
 public class Java2sAutoTextField extends JTextField {
   class AutoDocument extends PlainDocument {

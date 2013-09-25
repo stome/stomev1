@@ -1,9 +1,35 @@
-import javax.swing.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.datatransfer.*;
 import net.miginfocom.swing.MigLayout;
+
+import java.util.HashMap;
+import java.util.TreeSet;
+
+import java.awt.Toolkit;
+import java.awt.FlowLayout;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Clipboard;
+
+import javax.swing.JRootPane;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.JButton;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
+import javax.swing.JFrame;
+import javax.swing.JDialog;
+import javax.swing.JComboBox;
+import javax.swing.KeyStroke;
+import javax.swing.Action;
+import javax.swing.AbstractAction;
+import javax.swing.SwingConstants;
 
 class PopupMenu extends JPopupMenu
 {

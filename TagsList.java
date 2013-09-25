@@ -1,9 +1,18 @@
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
 import net.miginfocom.swing.MigLayout;
+
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 
 class TagsList extends JPanel
 {

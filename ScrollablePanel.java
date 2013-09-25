@@ -1,5 +1,10 @@
-import java.awt.*;
-import javax.swing.*;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.LayoutManager;
+
+import javax.swing.JPanel;
+import javax.swing.Scrollable;
 
 class ScrollablePanel extends JPanel implements Scrollable
 {

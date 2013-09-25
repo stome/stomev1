@@ -1,13 +1,31 @@
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.table.*;
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.util.*;
-import java.util.regex.*;
-import org.apache.commons.lang3.*;
+import java.util.ArrayList;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+import java.net.URL;
+import java.net.URLEncoder;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import org.apache.commons.lang3.StringEscapeUtils;
+
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Desktop;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseEvent;
+
+import javax.swing.JLabel;
+import javax.swing.JComboBox;
+import javax.swing.JTable;
+import javax.swing.JOptionPane;
+import javax.swing.ToolTipManager;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class ResultsModel extends DefaultTableModel
 {

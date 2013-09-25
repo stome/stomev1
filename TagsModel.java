@@ -1,4 +1,4 @@
-import javax.swing.table.*;
+import javax.swing.table.DefaultTableModel;
 
 public class TagsModel extends DefaultTableModel
 {

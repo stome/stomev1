@@ -1,48 +1,87 @@
-// STOME - Taking the Wold Wide Web by Stome
-
-import java.io.*;
-import java.net.*;
-import java.sql.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.naming.ldap.*;
-import org.json.simple.*;
-import org.json.simple.parser.*;
-import net.miginfocom.swing.MigLayout;
-import org.apache.commons.cli.*;
-import org.apache.commons.validator.routines.UrlValidator;
-
 /*
-     VERSION 1.0
-
-     DOCUMENTATION & MARKETING
-TODO 1: 8.0 set up github account
+STOME - Taking the Wold Wide Web by Stome
 
      VERSION 2.0
-TODO 10: 1.0 double-click views tag links
-TODO 11: 2.0 implement Add Tag: add tag to multiple links at once (popup menu)
-TODO 12: 2.0 implement Open Links: open muliple links at once (popup menu)
-TODO 13: 2.0 implement Refresh Shares (popup menu)
-TODO 14: 4.0 PAUSE/RESUME FETCHING
-TODO 15: 8.0 IMPORT LINKS FROM CHROME
-TODO 16: 8.0 IMPORT LINKS FROM FIREFOX
-TODO 17: 8.0 export selection to database
-TODO 18: 8.0 export selection to spreadsheet
-TODO 19: 8.0 make tag links that open new stome windows
-TODO 20: 8.0 make domain links that open new stome windows
-TODO 21: 8.0 add search box and Find button for searching within selected Results
-TODO 22: 8.0 add Sites tab (similar to Tags tab)
-TODO 23: 16.0 add bing as backup search in case google dies
-TODO 24: 40.0 implement Feed tab (rss)
-TODO 25: 40.0 implement Feed tab (twitter updates)
-TODO 26: 4.0 set up bountysource account
-
+TODO 1: 1.0 double-click views tag links
+TODO 2: 2.0 implement Add Tag: add tag to multiple links at once (popup menu)
+TODO 3: 2.0 implement Open Links: open muliple links at once (popup menu)
+TODO 4: 2.0 implement Refresh Shares (popup menu)
+TODO 5: 4.0 PAUSE/RESUME FETCHING
+TODO 6: 8.0 IMPORT LINKS FROM CHROME
+TODO 7: 8.0 IMPORT LINKS FROM FIREFOX
+TODO 8: 8.0 export selection to database
+TODO 9: 8.0 export selection to spreadsheet
+TODO 10: 8.0 make tag links that open new stome windows
+TODO 11: 8.0 make domain links that open new stome windows
+TODO 12: 8.0 add search box and Find button for searching within selected Results
+TODO 13: 8.0 add Sites tab (similar to Tags tab)
+TODO 14: 16.0 add bing as backup search in case google dies
+TODO 15: 40.0 implement Feed tab (rss)
+TODO 16: 40.0 implement Feed tab (twitter updates)
+TODO 17: 4.0 set up bountysource account
 */
+
+import java.util.ArrayList;
+
+import net.miginfocom.swing.MigLayout;
+
+import org.apache.commons.validator.routines.UrlValidator;
+
+import org.json.simple.parser.JSONParser;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLConnection;
+
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Dimension;
+import java.awt.Component;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JButton;
+import javax.swing.JTextField;
+import javax.swing.JTextArea;
+import javax.swing.JTable;
+import javax.swing.JViewport;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JFrame;
+import javax.swing.DefaultCellEditor;
+import javax.swing.ListSelectionModel;
+import javax.swing.UIDefaults;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+
+
 
 public class Stome
 {
