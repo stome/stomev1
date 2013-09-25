@@ -2,7 +2,13 @@ STOME
 =====
 
 Stome is a stand-alone link tagging program written in Java, somewhat like the web-app Delicious. All you need to do is
-download Stome.jar and run it. All the other files stored here are included for curious programmers.
+download Stome.jar and run it.
+
+DOWNLOADING STOME
+
+Go here to download Stome.jar:
+
+http://sourceforge.net/projects/stome/files/Stome.jar/download
 
 RUNNING STOME
 
