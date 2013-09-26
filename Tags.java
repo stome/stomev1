@@ -78,12 +78,15 @@ class TagRenderer extends DefaultTableCellRenderer
         while( regexMatcher.find() )
             matchList.add( regexMatcher.group() );
 
-        String htmlTags = "<html>";
-        for( String s : matchList )
-            htmlTags += s + "<br/>";
-        htmlTags += "</html>";
+        if( matchList.size() > 0 )
+        {
+            String htmlTags = "<html>";
+            for( String s : matchList )
+                htmlTags += s + "<br/>";
+            htmlTags += "</html>";
 
-        c.setToolTipText( htmlTags );
+            c.setToolTipText( htmlTags );
+        }
 
         return c;
     }
