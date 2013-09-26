@@ -411,6 +411,16 @@ public class LinkProcessor extends Thread
         String sql = "DELETE FROM link_tags WHERE tag_id = " + tagId +
             " AND link_id = " + linkId;
         dbUpdate( sql );
+
+        // Check to see if any links are associated with tag, if not delete tag
+        ArrayList<String[]> results = dbSelect(
+            "SELECT COUNT(*) FROM link_tags WHERE tag_id = " + tagId, 1 );
+        if( results.size() > 0 && results.get( 0 ).length > 0 )
+        {
+            int count = Integer.parseInt( (String) results.get( 0 )[ 0 ] );
+            if( count == 0 )
+                dbDeleteTag( tagName );
+        }
     }
 
     private String getLinkDomain( String linkKey, String url )
