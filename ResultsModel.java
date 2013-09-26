@@ -47,7 +47,6 @@ public class ResultsModel extends DefaultTableModel
     private LinkProcessor linkProcessor = null;
     private JLabel fetchStatusLabel     = null;
     private Tags allTags                = null;
-    private TagsModel tagsModel         = null;
     private TagsPanel tagsPanel         = null;
     private JComboBox newTagInput       = null;
 
@@ -56,10 +55,9 @@ public class ResultsModel extends DefaultTableModel
     private static final long serialVersionUID = 101;
 
     public ResultsModel(
-        JLabel fetchStatusLabel, TagsModel tagsModel, String dbFile )
+        JLabel fetchStatusLabel, String dbFile )
     {
         this.fetchStatusLabel = fetchStatusLabel;
-        this.tagsModel = tagsModel;
         this.dbFile    = dbFile;
         linkProcessor = new LinkProcessor( this, dbFile );
         allTags = linkProcessor.dbGetAllTags();
@@ -151,26 +149,39 @@ public class ResultsModel extends DefaultTableModel
             // Update GUI
             tags.remove( tagName );
             setValueAt( tags, rowIndex, ResultsModel.TAGS_COL );
+        }
+    }
 
-            for( int i = 0; i < tagsModel.getRowCount(); i++ )
+// TODO 1: implement this, see setValueAt method below
+    public void addLinkTag( String tagName, int rowIndex )
+    {
+        tagName = tagName.trim().toLowerCase().replaceAll( "\\s+", "-" );
+        if( ! tagName.equals( "" ) )
+        {
+            if( ! allTags.contains( tagName ) )
             {
-                String tag = (String) tagsModel.getValueAt( i, TagsModel.NAME_COL );
-                if( tag.equals( tagName ) )
-                {
-                    Integer count = (Integer) tagsModel.getValueAt( 
-                        i, TagsModel.COUNT_COL );
-                    count = new Integer( count.intValue() - 1 );
-                    if( count == 0 )
-                    {
-                        linkProcessor.dbDeleteTag( tagName );
-                        allTags.remove( tagName );
-                        newTagInput.removeItem( tagName );
-//                        tagsModel.removeRow( i );
-                    }
-//                    else
-//                        tagsModel.setValueAt( count, i, TagsModel.COUNT_COL );
-                    break;
-                }
+                int reply = JOptionPane.showConfirmDialog( null, 
+                    "Do you want to create new tag \"" + tagName + "\"?",
+                    "Create new tag", JOptionPane.YES_NO_OPTION );
+                if( reply == JOptionPane.YES_OPTION )
+                    allTags.add( tagName );
+                else
+                    return;
+            }
+
+            Tags tags = (Tags) getValueAt( rowIndex, ResultsModel.TAGS_COL );
+            if( ! tags.contains( tagName ) )
+            {
+                // Update database
+                Hyperlink link = 
+                    (Hyperlink) getValueAt( rowIndex, ResultsModel.LINK_COL );
+                String linkKey = link.getLinkKey();
+                linkProcessor.dbAddLink( linkKey, link.getTitle() );
+                linkProcessor.dbAddLinkTag( linkKey, tagName );
+
+                // Update GUI
+                tags.add( tagName );
+                setValueAt( tags, rowIndex, ResultsModel.TAGS_COL );
             }
         }
     }
@@ -178,62 +189,7 @@ public class ResultsModel extends DefaultTableModel
     @Override public void setValueAt( Object value, int rowIndex, int columnIndex )
     {
         if( columnIndex == ResultsModel.NEW_TAG_COL )
-        {
-            String newTag = ( (String) value ).trim().toLowerCase().
-                replaceAll( "\\s+", "-" );
-            if( ! newTag.equals( "" ) )
-            {
-                if( ! allTags.contains( newTag ) )
-                {
-                    int reply = JOptionPane.showConfirmDialog( null, 
-                        "Do you want to create new tag \"" + newTag + "\"?",
-                        "Create new tag", JOptionPane.YES_NO_OPTION );
-                    if( reply == JOptionPane.YES_OPTION )
-                        allTags.add( newTag );
-                    else
-                        return;
-                }
-
-                Tags tags = (Tags) getValueAt( rowIndex, ResultsModel.TAGS_COL );
-                if( ! tags.contains( newTag ) )
-                {
-                    // Update database
-                    Hyperlink link = 
-                        (Hyperlink) getValueAt( rowIndex, ResultsModel.LINK_COL );
-                    String linkKey = link.getLinkKey();
-                    linkProcessor.dbAddLink( linkKey, link.getTitle() );
-                    linkProcessor.dbAddLinkTag( linkKey, newTag );
-
-                    // Update GUI
-                    tags.add( newTag );
-                    setValueAt( tags, rowIndex, ResultsModel.TAGS_COL );
-
-/*
-                    boolean found = false;
-                    for( int i = 0; i < tagsModel.getRowCount(); i++ )
-                    {
-                        String tag = 
-                            (String) tagsModel.getValueAt( i, TagsModel.NAME_COL );
-                        if( tag.equals( newTag ) )
-                        {
-                            Integer count = (Integer) tagsModel.getValueAt( 
-                                i, TagsModel.COUNT_COL );
-                            count = new Integer( count.intValue() + 1 );
-                            tagsModel.setValueAt( count, i, TagsModel.COUNT_COL );
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if( ! found )
-                        tagsModel.addRow(
-                            newTag, getTagCount( newTag, new Tags() ),
-                            TagsModel.NAME_COL,
-                            TagsModel.SORT_ASC );
-*/
-                }
-            }
-        }
+            addLinkTag( (String) value, rowIndex );
         else
             super.setValueAt( value, rowIndex, columnIndex );
     }
