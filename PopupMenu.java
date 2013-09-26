@@ -44,6 +44,7 @@ class PopupMenu extends JPopupMenu
         JMenuItem copyTitles     = new JMenuItem( "Copy Titles" );
         JMenuItem clearSelection = new JMenuItem( "Clear Selection" );
         JMenuItem editTitles     = new JMenuItem( "Edit Titles" );
+        JMenuItem addTag         = new JMenuItem( "Add Tag" );
         JMenuItem deleteTag      = new JMenuItem( "Delete Tag" );
 
         if( rowCount == 0 )
@@ -51,8 +52,9 @@ class PopupMenu extends JPopupMenu
             copyLinks.setEnabled( false );
             copyTitles.setEnabled( false );
             clearSelection.setEnabled( false );
-            deleteTag.setEnabled( false );
             editTitles.setEnabled( false );
+            deleteTag.setEnabled( false );
+            addTag.setEnabled( false );
 
         }
 
@@ -68,7 +70,8 @@ class PopupMenu extends JPopupMenu
         } );
 
         editTitles.addActionListener( new EditTitlesListener( frame, table ) );
-        deleteTag.addActionListener( new DeleteTagListener( frame, table ) );
+        addTag.addActionListener( new ModifyTagListener( frame, table ) );
+        deleteTag.addActionListener( new ModifyTagListener( frame, table ) );
 
         add( copyLinks );
         add( copyTitles );
@@ -77,6 +80,7 @@ class PopupMenu extends JPopupMenu
         addSeparator();
         add( editTitles );
         add( deleteTag );
+        add( addTag );
     }
 
     public static void installEscapeCloseOperation( final JDialog dialog )
@@ -216,12 +220,12 @@ class EditTitlesListener implements ActionListener
 
 }
 
-class DeleteTagListener implements ActionListener
+class ModifyTagListener implements ActionListener
 {
     private JFrame frame = null;
     private JTable table = null;
 
-    public DeleteTagListener( JFrame frame, JTable table )
+    public ModifyTagListener( JFrame frame, JTable table )
     {
         this.frame = frame;
         this.table = table;
@@ -229,6 +233,7 @@ class DeleteTagListener implements ActionListener
 
     public void actionPerformed( ActionEvent e )
     {
+        final String command = e.getActionCommand();
         JPanel panel = new JPanel( new MigLayout( "", "", "" ) );
 
         int selectedRowCount = table.getSelectedRowCount();
@@ -251,33 +256,43 @@ class DeleteTagListener implements ActionListener
         String[] selectedTags = 
             selectedTagsSet.toArray( new String[ selectedTagsSet.size() ] );
 
-        final JDialog dialog = new JDialog( frame, "Delete Tag", true );
-        final JComboBox<String> deleteTagsSelector = 
+        final JDialog dialog = new JDialog( frame, command, true );
+        final JComboBox<String> modifyTagSelector = 
             new JComboBox<String>( selectedTags );
-        JButton deleteButton = new JButton( "Delete" );
-        deleteButton.addActionListener( new ActionListener() {
+        JButton modifyButton = null;
+        if( command.equals( "Add Tag" ) )
+            modifyButton = new JButton( "Add" );
+        else if( command.equals( "Delete Tag" ) )
+            modifyButton = new JButton( "Delete" );
+
+        modifyButton.addActionListener( new ActionListener() {
             public void actionPerformed( ActionEvent e )
             {
                 ResultsModel resultsModel = (ResultsModel) table.getModel();
 
                 String selectedTag = 
-                    (String) deleteTagsSelector.getSelectedItem();
+                    (String) modifyTagSelector.getSelectedItem();
 
                 int selectedRowCount = table.getSelectedRowCount();
                 for( int i = 0; i < table.getRowCount(); i++ )
                 {
                     if( selectedRowCount == 0 || table.isRowSelected( i ) )
-                        resultsModel.deleteLinkTag( selectedTag, i );
+                    {
+                        if( command.equals( "Add Tag" ) )
+                            resultsModel.addLinkTag( selectedTag, i );
+                        else if( command.equals( "Delete Tag" ) )
+                            resultsModel.deleteLinkTag( selectedTag, i );
+                    }
                 }
 
-                deleteTagsSelector.removeItem( selectedTag );
-                if( deleteTagsSelector.getItemCount() == 0 )
+                modifyTagSelector.removeItem( selectedTag );
+                if( modifyTagSelector.getItemCount() == 0 )
                     dialog.dispose();
             }
         } );
 
-        panel.add( deleteTagsSelector );
-        panel.add( deleteButton );
+        panel.add( modifyTagSelector );
+        panel.add( modifyButton );
 
         JScrollPane scrollpane = new JScrollPane( panel );
 
