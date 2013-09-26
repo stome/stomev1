@@ -152,11 +152,13 @@ class EditTitlesListener implements ActionListener
 {
     private JFrame frame = null;
     private JTable table = null;
+    private ResultsModel resultsModel = null;
 
     public EditTitlesListener( JFrame frame, JTable table )
     {
         this.frame = frame;
         this.table = table;
+        resultsModel = (ResultsModel) table.getModel();
     }
 
     public void actionPerformed( ActionEvent e )
@@ -177,7 +179,6 @@ class EditTitlesListener implements ActionListener
 
                 JLabel linkLabel = new JLabel( url );
                 final JTextField titleInput = new JTextField( link.getTitle(), 50 );
-                final ResultsModel resultsModel = (ResultsModel) table.getModel();
 
                 JButton fetchButton = new JButton( "Fetch" );
                 fetchButton.addActionListener( new ActionListener() {
@@ -224,21 +225,20 @@ class ModifyTagListener implements ActionListener
 {
     private JFrame frame = null;
     private JTable table = null;
+    private ResultsModel resultsModel = null;
 
     public ModifyTagListener( JFrame frame, JTable table )
     {
         this.frame = frame;
         this.table = table;
+        resultsModel = (ResultsModel) table.getModel();
     }
 
-    public void actionPerformed( ActionEvent e )
+    private String[] getSelectedTags()
     {
-        final String command = e.getActionCommand();
-        JPanel panel = new JPanel( new MigLayout( "", "", "" ) );
-
-        int selectedRowCount = table.getSelectedRowCount();
         HashMap<String,Boolean> selectedTagsHash = new HashMap<String,Boolean>();
 
+        int selectedRowCount = table.getSelectedRowCount();
         for( int i = 0; i < table.getRowCount(); i++ )
         {
             if( selectedRowCount == 0 || table.isRowSelected( i ) )
@@ -255,33 +255,38 @@ class ModifyTagListener implements ActionListener
 
         String[] selectedTags = 
             selectedTagsSet.toArray( new String[ selectedTagsSet.size() ] );
+        return selectedTags;
+    }
+
+    public void actionPerformed( ActionEvent e )
+    {
+        final String command = e.getActionCommand();
 
         final JDialog dialog = new JDialog( frame, command, true );
         final JComboBox<String> modifyTagSelector = 
-            new JComboBox<String>( selectedTags );
+            new JComboBox<String>( getSelectedTags() );
         JButton modifyButton = null;
         if( command.equals( "Add Tag" ) )
             modifyButton = new JButton( "Add" );
         else if( command.equals( "Delete Tag" ) )
             modifyButton = new JButton( "Delete" );
 
-        modifyButton.addActionListener( new ActionListener() {
+        modifyButton.addActionListener( new ActionListener()
+        {
             public void actionPerformed( ActionEvent e )
             {
-                ResultsModel resultsModel = (ResultsModel) table.getModel();
-
-                String selectedTag = 
-                    (String) modifyTagSelector.getSelectedItem();
+                String selectedTag = (String) modifyTagSelector.getSelectedItem();
 
                 int selectedRowCount = table.getSelectedRowCount();
                 for( int i = 0; i < table.getRowCount(); i++ )
                 {
                     if( selectedRowCount == 0 || table.isRowSelected( i ) )
                     {
+                        int mIndex = table.convertRowIndexToModel( i );
                         if( command.equals( "Add Tag" ) )
-                            resultsModel.addLinkTag( selectedTag, i );
+                            resultsModel.addLinkTag( selectedTag, mIndex );
                         else if( command.equals( "Delete Tag" ) )
-                            resultsModel.deleteLinkTag( selectedTag, i );
+                            resultsModel.deleteLinkTag( selectedTag, mIndex );
                     }
                 }
 
@@ -291,6 +296,7 @@ class ModifyTagListener implements ActionListener
             }
         } );
 
+        JPanel panel = new JPanel( new MigLayout( "", "", "" ) );
         panel.add( modifyTagSelector );
         panel.add( modifyButton );
 
