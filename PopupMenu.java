@@ -53,9 +53,8 @@ class PopupMenu extends JPopupMenu
             copyTitles.setEnabled( false );
             clearSelection.setEnabled( false );
             editTitles.setEnabled( false );
-            deleteTag.setEnabled( false );
             addTag.setEnabled( false );
-
+            deleteTag.setEnabled( false );
         }
 
         CopyListener copyListener = new CopyListener( frame, table );
@@ -79,8 +78,8 @@ class PopupMenu extends JPopupMenu
         add( clearSelection );
         addSeparator();
         add( editTitles );
-        add( deleteTag );
         add( addTag );
+        add( deleteTag );
     }
 
     public static void installEscapeCloseOperation( final JDialog dialog )
@@ -226,6 +225,7 @@ class ModifyTagListener implements ActionListener
     private JFrame frame = null;
     private JTable table = null;
     private ResultsModel resultsModel = null;
+    private JComboBox<Object> modifyTagSelector = null;
 
     public ModifyTagListener( JFrame frame, JTable table )
     {
@@ -234,37 +234,19 @@ class ModifyTagListener implements ActionListener
         resultsModel = (ResultsModel) table.getModel();
     }
 
-    private String[] getSelectedTags()
-    {
-        HashMap<String,Boolean> selectedTagsHash = new HashMap<String,Boolean>();
-
-        int selectedRowCount = table.getSelectedRowCount();
-        for( int i = 0; i < table.getRowCount(); i++ )
-        {
-            if( selectedRowCount == 0 || table.isRowSelected( i ) )
-            {
-                Tags tags = (Tags) table.getValueAt( i, ResultsModel.TAGS_COL );
-
-                for( int j = 0; j < tags.size(); j++ )
-                    selectedTagsHash.put( tags.get( j ), new Boolean( true ) );
-            }
-        }
-
-        TreeSet<String> selectedTagsSet = new TreeSet<String>();
-        selectedTagsSet.addAll( selectedTagsHash.keySet() );
-
-        String[] selectedTags = 
-            selectedTagsSet.toArray( new String[ selectedTagsSet.size() ] );
-        return selectedTags;
-    }
-
     public void actionPerformed( ActionEvent e )
     {
         final String command = e.getActionCommand();
 
         final JDialog dialog = new JDialog( frame, command, true );
-        final JComboBox<String> modifyTagSelector = 
-            new JComboBox<String>( getSelectedTags() );
+        if( command.equals( "Add Tag" ) )
+        {
+            modifyTagSelector = new Java2sAutoComboBox( resultsModel.getAllTags() );
+            ( (Java2sAutoComboBox) modifyTagSelector ).setStrict( false );
+        }
+        else if( command.equals( "Delete Tag" ) )
+            modifyTagSelector = new JComboBox<Object>( getSelectedTags() );
+
         JButton modifyButton = null;
         if( command.equals( "Add Tag" ) )
             modifyButton = new JButton( "Add" );
@@ -290,9 +272,12 @@ class ModifyTagListener implements ActionListener
                     }
                 }
 
-                modifyTagSelector.removeItem( selectedTag );
-                if( modifyTagSelector.getItemCount() == 0 )
-                    dialog.dispose();
+                if( command.equals( "Delete Tag" ) )
+                {
+                    modifyTagSelector.removeItem( selectedTag );
+                    if( modifyTagSelector.getItemCount() == 0 )
+                        dialog.dispose();
+                }
             }
         } );
 
@@ -307,5 +292,37 @@ class ModifyTagListener implements ActionListener
         dialog.getContentPane().add( scrollpane );
         dialog.pack();
         dialog.setVisible( true );
+    }
+
+    private String[] allTags()
+    {
+        Tags allTags = resultsModel.getAllTags();
+
+        String[] allTagsArray = allTags.toArray( new String[ allTags.size() ] );
+        return allTagsArray;
+    }
+
+    private String[] getSelectedTags()
+    {
+        HashMap<String,Boolean> selectedTagsHash = new HashMap<String,Boolean>();
+
+        int selectedRowCount = table.getSelectedRowCount();
+        for( int i = 0; i < table.getRowCount(); i++ )
+        {
+            if( selectedRowCount == 0 || table.isRowSelected( i ) )
+            {
+                Tags tags = (Tags) table.getValueAt( i, ResultsModel.TAGS_COL );
+
+                for( int j = 0; j < tags.size(); j++ )
+                    selectedTagsHash.put( tags.get( j ), new Boolean( true ) );
+            }
+        }
+
+        TreeSet<String> selectedTagsSet = new TreeSet<String>();
+        selectedTagsSet.addAll( selectedTagsHash.keySet() );
+
+        String[] selectedTags = 
+            selectedTagsSet.toArray( new String[ selectedTagsSet.size() ] );
+        return selectedTags;
     }
 }
