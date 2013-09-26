@@ -95,7 +95,6 @@ public class Stome
     private static JFrame frame = new JFrame( "Search - " + Stome.APP_TITLE );
 
     private static ResultsModel resultsModel = null;
-    private static TagsModel    tagsModel    = null;
 
     private static JTextArea  linksInput    = new JTextArea( 20, 40 );
     private static JTextField keywordsInput = new JTextField();
@@ -402,9 +401,8 @@ public class Stome
         );
 
         JLabel fetchStatusLabel = new JLabel();
-        tagsModel = new TagsModel();
 
-        resultsModel = new ResultsModel( fetchStatusLabel, tagsModel, dbFile );
+        resultsModel = new ResultsModel( fetchStatusLabel, dbFile );
 
         Tags tags = resultsModel.getAllTags();
         tags.add( 0, "" );
