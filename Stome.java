@@ -1,9 +1,10 @@
 /*
 STOME - Taking the Wold Wide Web by Stome
 
+TODO 0: Make it so that hovering over empty tags doesn't bring anything up
+
      VERSION 2.0
 TODO 1: 1.0 double-click views tag links
-TODO 2: 2.0 implement Add Tag: add tag to multiple links at once (popup menu)
 TODO 3: 2.0 implement Open Links: open muliple links at once (popup menu)
 TODO 4: 2.0 implement Refresh Shares (popup menu)
 TODO 5: 4.0 PAUSE/RESUME FETCHING
@@ -19,11 +20,14 @@ TODO 14: 16.0 add bing as backup search in case google dies
 TODO 15: 40.0 implement Feed tab (rss)
 TODO 16: 40.0 implement Feed tab (twitter updates)
 TODO 17: 4.0 set up bountysource account
+
+COMPLETE
+TODO 2: 2.0 implement Add Tag: add tag to multiple links at once (popup menu)
 */
 
-import java.util.ArrayList;
-
 import net.miginfocom.swing.MigLayout;
+
+import java.util.ArrayList;
 
 import org.apache.commons.validator.routines.UrlValidator;
 
@@ -603,10 +607,10 @@ public class Stome
         setColumnWidth( resultsColModel, ResultsModel.LINK_COL,    200, 400,  -1 );
 
         resultsTable.setAutoCreateRowSorter( true );
-
         resultsTable.setSelectionMode( 
             ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
         resultsTable.setRowSelectionAllowed( true );
+
         resultsTable.setFillsViewportHeight( true );
         JScrollPane resultsScrollPane = new JScrollPane( resultsTable );
 
