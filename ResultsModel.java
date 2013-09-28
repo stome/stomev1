@@ -152,7 +152,6 @@ public class ResultsModel extends DefaultTableModel
         }
     }
 
-// TODO 1: implement this, see setValueAt method below
     public void addLinkTag( String tagName, int rowIndex )
     {
         tagName = tagName.trim().toLowerCase().replaceAll( "\\s+", "-" );
