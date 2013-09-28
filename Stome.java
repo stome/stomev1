@@ -2,20 +2,16 @@
 STOME - Taking the Wold Wide Web by Stome
 
      VERSION 2.0
-TODO 2: 4.0 IMPORT LINKS FROM FIREFOX
-            sqlite3 $HOME/.mozilla/firefox/mwad0hks.default/places.sqlite \
-                "select url from moz_places where id in ( select fk from \
-                moz_bookmarks ) and url like 'http%'"
-TODO 3: 1.0 double-click views tag links
-TODO 4: 4.0 PAUSE/RESUME FETCHING
-TODO 5: 8.0 add search box and Find button for searching within selected Results
-TODO 6: 2.0 implement Open Links: open muliple links at once (popup menu)
+TODO 1: 1.0 double-click views tag links
+TODO 2: 4.0 PAUSE/RESUME FETCHING
+TODO 3: 8.0 add search box and Find button for searching within selected Results
+TODO 4: 2.0 implement Open Links: open muliple links at once (popup menu)
+TODO 5: 8.0 export selection to database
+TODO 6: 8.0 export selection to spreadsheet
 TODO 7: 2.0 implement Refresh Shares (popup menu)
-TODO 8: 8.0 export selection to database
-TODO 9: 8.0 export selection to spreadsheet
-TODO 10: 8.0 add links to local filesystem files
-TODO 10: 8.0 need to allow users to edit shares to make this useful
-TODO 11: 8.0 add bing as backup search in case google dies
+TODO 8: 8.0 add links to local filesystem files
+TODO 8: 8.0 need to allow users to edit shares to make this useful
+TODO 9: 8.0 add bing as backup search in case google dies
 
      VERSION 3.0
 TODO 20: 40.0 implement Feed tab (twitter user updates)
@@ -25,11 +21,14 @@ TODO 22: 40.0 implement Feed tab (rss)
 COMPLETE
 Implemented Add Tag. Add tag to multiple links at once (popup menu)
 Import links from Google Chrome feature added
+Import links from Firefox feature added
 */
 
 import net.miginfocom.swing.MigLayout;
 
 import java.util.ArrayList;
+
+import org.apache.tools.ant.DirectoryScanner;
 
 import org.apache.commons.validator.routines.UrlValidator;
 
@@ -43,6 +42,11 @@ import org.json.simple.JSONArray;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLConnection;
+
+import java.sql.DriverManager;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.ResultSet;
 
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
@@ -116,9 +120,9 @@ public class Stome
 
     private static JButton linksImportButton = new JButton( "Import" );
     private static JButton linksImportFromChromeButton = 
-        new JButton( "Import from Chrome" );
+        new JButton( "Import Chrome Bookmarks" );
     private static JButton linksImportFromFirefoxButton = 
-        new JButton( "Import from Firefox" );
+        new JButton( "Import Firefox Bookmarks" );
 
     private static JButton keywordsSearchButton = new JButton( "Search" );
     private static JButton tagsViewButton       = new JButton( "View" );
@@ -271,7 +275,7 @@ public class Stome
         {
             public void actionPerformed( ActionEvent e )
             {
-                // Determine Chrome bookmarks file
+                // Determine the Chrome bookmarks file
 
                 String os = System.getProperty( "os.name" );
                 String userHome = System.getProperty( "user.home" );
@@ -289,19 +293,74 @@ public class Stome
 
                 if( bookmarksFile != null )
                 {
+                    ArrayList<String> urlArrayList = new ArrayList<String>();
+
                     String content = readFile(
                         bookmarksFile.getPath(), StandardCharsets.UTF_8 );
-
-                    ArrayList<String> urlArrayList = new ArrayList<String>();
 
                     String regex = "\"url\": \"(.*)\"";
                     Pattern pattern = Pattern.compile( regex );
                     Matcher matcher = pattern.matcher( content );
                     while( matcher.find() )
                         urlArrayList.add( matcher.group( 1 ) );
+
                     String[] links = urlArrayList.toArray(
                         new String[ urlArrayList.size() ] );
+                    addLinks( links );
+                }
+            }
+        } );
 
+        linksImportFromFirefoxButton.addActionListener( new ActionListener()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                // Determine the Firefox bookmarks file
+
+                String os = System.getProperty( "os.name" );
+                String userHome = System.getProperty( "user.home" );
+
+                DirectoryScanner scanner = new DirectoryScanner();
+                scanner.setCaseSensitive( false );
+                
+                String baseDir = null;
+                if( os.startsWith( "Linux" ) )
+                {
+                    baseDir = userHome + "/.mozilla/firefox/";
+                    scanner.setIncludes( new String[] { "*.default/places.sqlite" } );
+                    scanner.setBasedir( baseDir );
+                }
+                else if( os.startsWith( "Windows" ) )
+                {
+                    if( os.equals( "Windows XP" ) )
+                        baseDir = userHome + 
+                            "\\Application Data\\Mozilla\\Firefox\\Profiles\\";
+                    else
+                        baseDir = userHome + 
+                            "\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\";
+System.out.println( baseDir );
+                    scanner.setIncludes(
+                        new String[] { "*.default\\places.sqlite" } );
+                    scanner.setBasedir( baseDir );
+                }
+
+                // Scan bookmarks files for urls
+
+                if( baseDir != null )
+                {
+                    ArrayList<String> urlArrayList = new ArrayList<String>();
+
+                    scanner.scan();
+                    String[] files = scanner.getIncludedFiles();
+                    for( String f : files )
+                    {
+                        String ffDbFile = baseDir + f;
+System.out.println( ffDbFile );
+                        addUrlsFromDbToArray( ffDbFile, urlArrayList );
+                    }
+
+                    String[] links = urlArrayList.toArray(
+                        new String[ urlArrayList.size() ] );
                     addLinks( links );
                 }
             }
@@ -320,6 +379,35 @@ public class Stome
                 addLinks( links );
             }
         } );
+    }
+
+    public static void addUrlsFromDbToArray(
+        String ffDbFile, ArrayList<String> urlArrayList )
+    {
+        Connection dbh = null;
+        try
+        {
+            Class.forName( "org.sqlite.JDBC" );
+            dbh = DriverManager.getConnection( "jdbc:sqlite:" + ffDbFile );
+        }
+        catch( Exception ex ) { ex.printStackTrace(); }
+
+        if( dbh != null )
+        {
+            String query = "SELECT url FROM moz_places " + 
+                "WHERE id IN ( SELECT fk FROM moz_bookmarks ) " + 
+                "AND url LIKE 'http%'";
+            Statement stmt = null;
+            try
+            {
+                stmt = dbh.createStatement();
+                ResultSet rs = stmt.executeQuery( query );
+
+                while( rs.next() )
+                    urlArrayList.add( rs.getString( 1 ) );
+            }
+            catch( Exception ex ) { ex.printStackTrace(); }
+        }
     }
 
     public static String readFile( String path, Charset encoding )
