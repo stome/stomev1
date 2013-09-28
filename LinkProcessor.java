@@ -209,8 +209,13 @@ public class LinkProcessor extends Thread
                        ! titleFetcher.completed() )
                     sleep( 1000 );
 
+                // Remove links with no associated tags from the "links" table
+                String query = "DELETE FROM links WHERE id NOT IN " + 
+                    "( SELECT DISTINCT( link_id ) FROM link_tags );";
+                dbUpdate( query );
+
                 // Delete expired links in all_links (1 day or older)
-                String query = "DELETE FROM all_links " +
+                query = "DELETE FROM all_links " +
                     "WHERE DATE( 'now' ) > DATE( added_on, '+24 hours' )";
                 dbUpdate( query );
 
