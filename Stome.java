@@ -1,28 +1,32 @@
 /*
 STOME - Taking the Wold Wide Web by Stome
 
-TODO 0: Make it so that hovering over empty tags doesn't bring anything up
-
      VERSION 2.0
-TODO 1: 1.0 double-click views tag links
-TODO 3: 2.0 implement Open Links: open muliple links at once (popup menu)
-TODO 4: 2.0 implement Refresh Shares (popup menu)
-TODO 5: 4.0 PAUSE/RESUME FETCHING
-TODO 6: 8.0 IMPORT LINKS FROM CHROME
-TODO 7: 8.0 IMPORT LINKS FROM FIREFOX
+TODO 1: 4.0 IMPORT LINKS FROM CHROME
+            grep '"url":' $HOME/.config/chromium/Default/Bookmarks
+TODO 2: 4.0 IMPORT LINKS FROM FIREFOX
+            sqlite3 $HOME/.mozilla/firefox/mwad0hks.default/places.sqlite \
+                "select url from moz_places where id in ( select fk from \
+                moz_bookmarks ) and url like 'http%'"
+TODO 3: 1.0 double-click views tag links
+TODO 4: 4.0 PAUSE/RESUME FETCHING
+TODO 5: 8.0 add search box and Find button for searching within selected Results
+TODO 6: 2.0 implement Open Links: open muliple links at once (popup menu)
+TODO 7: 2.0 implement Refresh Shares (popup menu)
 TODO 8: 8.0 export selection to database
 TODO 9: 8.0 export selection to spreadsheet
-TODO 10: 8.0 make tag links that open new stome windows
-TODO 11: 8.0 make domain links that open new stome windows
-TODO 12: 8.0 add search box and Find button for searching within selected Results
-TODO 13: 8.0 add Sites tab (similar to Tags tab)
-TODO 14: 16.0 add bing as backup search in case google dies
-TODO 15: 40.0 implement Feed tab (rss)
-TODO 16: 40.0 implement Feed tab (twitter updates)
-TODO 17: 4.0 set up bountysource account
+TODO 10: 8.0 add links to local filesystem files
+TODO 10: 8.0 need to allow users to edit shares to make this useful
+TODO 11: 16.0 add bing as backup search in case google dies
+
+     VERSION 3.0
+TODO 20: 40.0 implement Feed tab (rss)
+TODO 21: 40.0 implement Feed tab (twitter user updates)
+TODO 22: 40.0 implement Feed tab (youtube channel updates)
+TODO 23: 10.0 add links to files on filesystem
 
 COMPLETE
-TODO 2: 2.0 implement Add Tag: add tag to multiple links at once (popup menu)
+TODO 2: 2.0 Implemented Add Tag. Add tag to multiple links at once (popup menu)
 */
 
 import net.miginfocom.swing.MigLayout;
@@ -102,11 +106,9 @@ public class Stome
 
     private static JTextArea  linksInput    = new JTextArea( 20, 40 );
     private static JTextField keywordsInput = new JTextField();
-//    static JTextField siteInput     = new JTextField();
 
     private static JButton linksImportButton    = new JButton( "Import" );
     private static JButton keywordsSearchButton = new JButton( "Search" );
-//    static JButton siteScanButton       = new JButton( "Scan" );
     private static JButton tagsViewButton       = new JButton( "View" );
 
     private static JButton clearLinksButton = new JButton( "Clear Links" );
@@ -218,7 +220,6 @@ public class Stome
     {
         linksImportButton.setEnabled( enabled );
         keywordsSearchButton.setEnabled( enabled );
-//        siteScanButton.setEnabled( enabled );
         tagsViewButton.setEnabled( enabled );
     }
 
@@ -249,15 +250,6 @@ public class Stome
                 addLinks( links );
             }
         } );
-
-/*
-        siteScanButton.addActionListener( new ActionListener() {
-            public void actionPerformed( ActionEvent e )
-            {
-                String site = siteInput.getText();
-            }
-        } );
-*/
 
         tagsViewButton.addActionListener( new ActionListener() {
             public void actionPerformed( ActionEvent e )
@@ -470,32 +462,8 @@ public class Stome
 
         // Tags: managed by TagsPanel
 
-        // Site
-
-/*
-        siteInput.setPreferredSize(
-            new Dimension( siteInput.getMaximumSize().width, 
-                           siteInput.getPreferredSize().height ) );
-
-        JButton siteClearButton = new JButton( "Clear" );
-        siteClearButton.addActionListener( new ActionListener() {
-            public void actionPerformed( ActionEvent e )
-            {
-                siteInput.setText( "" );
-                siteInput.requestFocus();
-            }
-        } );
-
-        JPanel sitePanel = new JPanel( new MigLayout() );
-        sitePanel.add( new JLabel( "Site" ), "span,wrap" );
-        sitePanel.add( siteInput, "span,wrap" );
-        sitePanel.add( siteClearButton, "align left" );
-        sitePanel.add( siteScanButton, "align right" );
-*/
-
         tabbedPane = new JTabbedPane();
         tabbedPane.add( "Search", keywordsPanel );
-//        tabbedPane.add( "Site", sitePanel );
         tabbedPane.add( "Import", linksPanel );
         tabbedPane.add( "Tags", tagsPanel );
 
@@ -509,10 +477,6 @@ public class Stome
                     keywordsInput.requestFocus();
                     frame.setTitle( "Search - " + Stome.APP_TITLE );
                 }
-/*
-                else if( selectedIndex == 1 )
-                    siteInput.requestFocus();
-*/
                 else if( selectedIndex == 1 )
                 {
                     linksInput.requestFocus();
