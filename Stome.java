@@ -2,8 +2,6 @@
 STOME - Taking the Wold Wide Web by Stome
 
      VERSION 2.0
-TODO 1: 4.0 IMPORT LINKS FROM CHROME
-            grep '"url":' $HOME/.config/chromium/Default/Bookmarks
 TODO 2: 4.0 IMPORT LINKS FROM FIREFOX
             sqlite3 $HOME/.mozilla/firefox/mwad0hks.default/places.sqlite \
                 "select url from moz_places where id in ( select fk from \
@@ -17,16 +15,16 @@ TODO 8: 8.0 export selection to database
 TODO 9: 8.0 export selection to spreadsheet
 TODO 10: 8.0 add links to local filesystem files
 TODO 10: 8.0 need to allow users to edit shares to make this useful
-TODO 11: 16.0 add bing as backup search in case google dies
+TODO 11: 8.0 add bing as backup search in case google dies
 
      VERSION 3.0
-TODO 20: 40.0 implement Feed tab (rss)
-TODO 21: 40.0 implement Feed tab (twitter user updates)
-TODO 22: 40.0 implement Feed tab (youtube channel updates)
-TODO 23: 10.0 add links to files on filesystem
+TODO 20: 40.0 implement Feed tab (twitter user updates)
+TODO 21: 40.0 implement Feed tab (youtube channel updates)
+TODO 22: 40.0 implement Feed tab (rss)
 
 COMPLETE
-TODO 2: 2.0 Implemented Add Tag. Add tag to multiple links at once (popup menu)
+Implemented Add Tag. Add tag to multiple links at once (popup menu)
+Import links from Google Chrome feature added
 */
 
 import net.miginfocom.swing.MigLayout;
@@ -35,6 +33,9 @@ import java.util.ArrayList;
 
 import org.apache.commons.validator.routines.UrlValidator;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import org.json.simple.parser.JSONParser;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -42,6 +43,12 @@ import org.json.simple.JSONArray;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLConnection;
+
+import java.nio.charset.Charset;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import java.io.File;
 import java.io.BufferedReader;
@@ -107,7 +114,12 @@ public class Stome
     private static JTextArea  linksInput    = new JTextArea( 20, 40 );
     private static JTextField keywordsInput = new JTextField();
 
-    private static JButton linksImportButton    = new JButton( "Import" );
+    private static JButton linksImportButton = new JButton( "Import" );
+    private static JButton linksImportFromChromeButton = 
+        new JButton( "Import from Chrome" );
+    private static JButton linksImportFromFirefoxButton = 
+        new JButton( "Import from Firefox" );
+
     private static JButton keywordsSearchButton = new JButton( "Search" );
     private static JButton tagsViewButton       = new JButton( "View" );
 
@@ -219,21 +231,16 @@ public class Stome
     public static void buttonsSetEnabled( boolean enabled )
     {
         linksImportButton.setEnabled( enabled );
+        linksImportFromFirefoxButton.setEnabled( enabled );
+        linksImportFromChromeButton.setEnabled( enabled );
         keywordsSearchButton.setEnabled( enabled );
         tagsViewButton.setEnabled( enabled );
     }
 
     private static void wireButtons()
     {
-        linksImportButton.addActionListener( new ActionListener() {
-            public void actionPerformed( ActionEvent e )
-            {
-                String[] links = linksInput.getText().split( "\n" );
-                addLinks( links );
-            }
-        } );
-
-        keywordsSearchButton.addActionListener( new ActionListener() {
+        keywordsSearchButton.addActionListener( new ActionListener()
+        {
             public void actionPerformed( ActionEvent e )
             {
                 String query = keywordsInput.getText().replace( " ", "+" );
@@ -251,7 +258,57 @@ public class Stome
             }
         } );
 
-        tagsViewButton.addActionListener( new ActionListener() {
+        linksImportButton.addActionListener( new ActionListener()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                String[] links = linksInput.getText().split( "\n" );
+                addLinks( links );
+            }
+        } );
+
+        linksImportFromChromeButton.addActionListener( new ActionListener()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                // Determine Chrome bookmarks file
+
+                String os = System.getProperty( "os.name" );
+                String userHome = System.getProperty( "user.home" );
+
+                File bookmarksFile = null;
+                if( os.startsWith( "Linux" ) )
+                    bookmarksFile = new File(
+                        userHome + "/.config/chromium/Default/Bookmarks" );
+                else if( os.startsWith( "Windows" ) )
+                    bookmarksFile = new File(
+                        userHome + "\\Local Settings\\Application Data\\" + 
+                        "\\Google\\Chrome\\User Data\\Default\\Bookmarks" );
+
+                // Scan bookmarks file for urls
+
+                if( bookmarksFile != null )
+                {
+                    String content = readFile(
+                        bookmarksFile.getPath(), StandardCharsets.UTF_8 );
+
+                    ArrayList<String> urlArrayList = new ArrayList<String>();
+
+                    String regex = "\"url\": \"(.*)\"";
+                    Pattern pattern = Pattern.compile( regex );
+                    Matcher matcher = pattern.matcher( content );
+                    while( matcher.find() )
+                        urlArrayList.add( matcher.group( 1 ) );
+                    String[] links = urlArrayList.toArray(
+                        new String[ urlArrayList.size() ] );
+
+                    addLinks( links );
+                }
+            }
+        } );
+
+        tagsViewButton.addActionListener( new ActionListener()
+        {
             public void actionPerformed( ActionEvent e )
             {
                 Tags selectedTags = tagsPanel.getSelectedTags();
@@ -263,6 +320,18 @@ public class Stome
                 addLinks( links );
             }
         } );
+    }
+
+    public static String readFile( String path, Charset encoding )
+    {
+        String content = null;
+        try
+        {
+            byte[] encoded = Files.readAllBytes( Paths.get( path ) );
+            content = encoding.decode( ByteBuffer.wrap( encoded ) ).toString();
+        }
+        catch( IOException ex ) {}
+        return content;
     }
 
 /*
@@ -427,6 +496,8 @@ public class Stome
         linksPanel.add( new JLabel( "Links" ), "span,wrap" );
         linksPanel.add( linksInputScrollPane, "span,grow,wrap" );
         linksPanel.add( linksClearButton, "align left" );
+        linksPanel.add( linksImportFromChromeButton, "align center" );
+        linksPanel.add( linksImportFromFirefoxButton, "align center" );
         linksPanel.add( linksImportButton, "align right" );
 
         // Keywords
