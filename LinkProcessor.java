@@ -666,13 +666,14 @@ public class LinkProcessor extends Thread
         catch( Exception ex )
         {
             System.err.println( ex.getClass().getName() + ": " + ex.getMessage() );
-            System.exit( 0 );
+//            System.exit( 0 );
         }
         return dbh;
     }
 
     private void dbUpdate( String sql )
     {
+        Connection dbh = dbConnect();
         Statement stmt = null;
         try
         {
@@ -682,20 +683,24 @@ public class LinkProcessor extends Thread
         catch( Exception ex )
         {
             if( ! ex.getMessage().matches( "^table \\S+ already exists$" ) )
-            {
                 System.err.println( ex.getClass().getName() + 
                                     ": " + ex.getMessage() );
-            }
         }
         finally
         {
-            try { if( stmt != null ) { stmt.close(); } }
+            try
+            {
+                if( stmt != null ) { stmt.close(); }
+                if( dbh != null ) { dbh.close(); }
+            }
             catch( Exception ex ) { ex.printStackTrace(); }
         }
     }
 
     public void dbUpdateTitle( String linkKey, String title )
     {
+        Connection dbh = dbConnect();
+
         PreparedStatement stmt = null;
 
         String linkId = dbGetLinkId( linkKey );
@@ -721,14 +726,14 @@ public class LinkProcessor extends Thread
             }
             stmt.executeUpdate();
         }
-        catch( SQLException ex )
-        {
-//            if( ! ex.getMessage().matches( ".*column link_key is not unique.*" ) )
-                ex.printStackTrace();
-        }
+        catch( SQLException ex ) { ex.printStackTrace(); }
         finally
         {
-            try { if( stmt != null ) { stmt.close(); } }
+            try
+            {
+                if( stmt != null ) { stmt.close(); }
+                if( dbh != null ) { dbh.close(); }
+            }
             catch( Exception ex ) { ex.printStackTrace(); }
         }
     }
