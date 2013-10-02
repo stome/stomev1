@@ -38,6 +38,8 @@ public class LinkProcessor extends Thread
 
     private String dbFile = null;
 
+    private Object dbLock = new Object();
+
     public LinkProcessor( ResultsModel resultsModel, String dbFile )
     {
         this.resultsModel = resultsModel;
@@ -666,98 +668,97 @@ public class LinkProcessor extends Thread
         catch( Exception ex )
         {
             System.err.println( ex.getClass().getName() + ": " + ex.getMessage() );
-//            System.exit( 0 );
         }
         return dbh;
     }
 
     private void dbUpdate( String sql )
     {
-        Connection dbh = dbConnect();
-        Statement stmt = null;
-        try
+        synchronized( dbLock )
         {
-            stmt = dbh.createStatement();
-            stmt.executeUpdate( sql );
-        }
-        catch( Exception ex )
-        {
-            if( ! ex.getMessage().matches( "^table \\S+ already exists$" ) )
-                System.err.println( ex.getClass().getName() + 
-                                    ": " + ex.getMessage() );
-        }
-        finally
-        {
+            Statement stmt = null;
             try
             {
-                if( stmt != null ) { stmt.close(); }
-                if( dbh != null ) { dbh.close(); }
+                stmt = dbh.createStatement();
+                stmt.executeUpdate( sql );
             }
-            catch( Exception ex ) { ex.printStackTrace(); }
+            catch( Exception ex )
+            {
+                if( ! ex.getMessage().matches( "^table \\S+ already exists$" ) )
+                    System.err.println( ex.getClass().getName() + 
+                                        ": " + ex.getMessage() );
+            }
+            finally
+            {
+                try { if( stmt != null ) { stmt.close(); } }
+                catch( Exception ex ) { ex.printStackTrace(); }
+            }
         }
     }
 
     public void dbUpdateTitle( String linkKey, String title )
     {
-        Connection dbh = dbConnect();
-
-        PreparedStatement stmt = null;
-
-        String linkId = dbGetLinkId( linkKey );
-
-        try
+        synchronized( dbLock )
         {
-            if( linkId == null )
-            {
-                stmt = dbh.prepareStatement(
-                    "INSERT INTO links( link_key, url, title ) " + 
-                    "VALUES( ?, ?, ? )" );
-                stmt.setString( 1, linkKey );
-                stmt.setString( 2, allUrls.get( linkKey ) );
-                stmt.setString( 3, title );
-            }
-            else
-            {
-                stmt = dbh.prepareStatement(
-                    "UPDATE links SET url = ?, title = ? WHERE link_key = ?" );
-                stmt.setString( 1, allUrls.get( linkKey ) );
-                stmt.setString( 2, title );
-                stmt.setString( 3, linkKey );
-            }
-            stmt.executeUpdate();
-        }
-        catch( SQLException ex ) { ex.printStackTrace(); }
-        finally
-        {
+            PreparedStatement stmt = null;
+
+            String linkId = dbGetLinkId( linkKey );
+
             try
             {
-                if( stmt != null ) { stmt.close(); }
-                if( dbh != null ) { dbh.close(); }
+                if( linkId == null )
+                {
+                    stmt = dbh.prepareStatement(
+                        "INSERT INTO links( link_key, url, title ) " + 
+                        "VALUES( ?, ?, ? )" );
+                    stmt.setString( 1, linkKey );
+                    stmt.setString( 2, allUrls.get( linkKey ) );
+                    stmt.setString( 3, title );
+                }
+                else
+                {
+                    stmt = dbh.prepareStatement(
+                        "UPDATE links SET url = ?, title = ? WHERE link_key = ?" );
+                    stmt.setString( 1, allUrls.get( linkKey ) );
+                    stmt.setString( 2, title );
+                    stmt.setString( 3, linkKey );
+                }
+                stmt.executeUpdate();
             }
-            catch( Exception ex ) { ex.printStackTrace(); }
+            catch( SQLException ex ) { ex.printStackTrace(); }
+            finally
+            {
+                try { if( stmt != null ) { stmt.close(); } }
+                catch( Exception ex ) { ex.printStackTrace(); }
+            }
         }
     }
 
     private ArrayList<String[]> dbSelect( String query, int columns )
     {
-        Statement stmt = null;
-        ArrayList<String[]> results = new ArrayList<String[]>();
-        try
-        {
-            stmt = dbh.createStatement();
-            ResultSet rs = stmt.executeQuery( query );
 
-            while( rs.next() )
-            {
-                String[] row = new String[ columns ];
-                for( int j = 0; j < columns; j++ )
-                    row[ j ] = rs.getString( j + 1 );
-                results.add( row );
-            }
-        }
-        catch( Exception ex )
+        ArrayList<String[]> results = new ArrayList<String[]>();
+
+        synchronized( dbLock )
         {
-            ex.printStackTrace();
+            Statement stmt = null;
+            try
+            {
+                stmt = dbh.createStatement();
+                ResultSet rs = stmt.executeQuery( query );
+
+                while( rs.next() )
+                {
+                    String[] row = new String[ columns ];
+                    for( int j = 0; j < columns; j++ )
+                        row[ j ] = rs.getString( j + 1 );
+                    results.add( row );
+                }
+            }
+            catch( Exception ex )
+            {
+                ex.printStackTrace();
+            }
         }
 
         return results;
