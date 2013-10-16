@@ -700,7 +700,8 @@ System.out.println( ffDbFile );
             private void openPopup( MouseEvent e )
             {
                 PopupMenu menu = new PopupMenu( frame, resultsTable );
-                menu.show( e.getComponent(), e.getX(), e.getY() );
+//                menu.show( e.getComponent(), e.getX(), e.getY() );
+                menu.show( resultsTable, e.getX(), e.getY() );
             }
         } );
 
