@@ -247,18 +247,26 @@ public class Stome
         {
             public void actionPerformed( ActionEvent e )
             {
-                String query = keywordsInput.getText().replace( " ", "+" );
+                buttonsSetEnabled( false );
+                Thread t = new Thread()
+                {
+                    public void run()
+                    {
+                        String query = keywordsInput.getText().replace( " ", "+" );
 
-                // Only 64 results can be fetched using this method 
-                // (8 pages of 8 results per page)
+                        // Only 64 results can be fetched using this method 
+                        // (8 pages of 8 results per page)
 
-                ArrayList <String> urlArrayList = doSearchJava( query );
-//                ArrayList <String> urlArrayList = doSearchLocalPython( query );
-//                ArrayList <String> urlArrayList = doSearchRemotePython( query );
+                        ArrayList <String> urlArrayList = doSearchJava( query );
+//                        ArrayList <String> urlArrayList = doSearchLocalPython( query );
+//                        ArrayList <String> urlArrayList = doSearchRemotePython( query );
 
-                String[] links = urlArrayList.toArray(
-                    new String[ urlArrayList.size() ] );
-                addLinks( links );
+                        String[] links = urlArrayList.toArray(
+                            new String[ urlArrayList.size() ] );
+                        addLinks( links );
+                    }
+                };
+                t.start();
             }
         } );
 
@@ -266,6 +274,7 @@ public class Stome
         {
             public void actionPerformed( ActionEvent e )
             {
+                buttonsSetEnabled( false );
                 String[] links = linksInput.getText().split( "\n" );
                 addLinks( links );
             }
@@ -275,6 +284,8 @@ public class Stome
         {
             public void actionPerformed( ActionEvent e )
             {
+                buttonsSetEnabled( false );
+
                 // Determine the Chrome bookmarks file
 
                 String os = System.getProperty( "os.name" );
@@ -315,6 +326,8 @@ public class Stome
         {
             public void actionPerformed( ActionEvent e )
             {
+                buttonsSetEnabled( false );
+
                 // Determine the Firefox bookmarks file
 
                 String os = System.getProperty( "os.name" );
@@ -370,6 +383,8 @@ System.out.println( ffDbFile );
         {
             public void actionPerformed( ActionEvent e )
             {
+                buttonsSetEnabled( false );
+
                 Tags selectedTags = tagsPanel.getSelectedTags();
 
                 ArrayList<String> urlArrayList = 
@@ -530,7 +545,6 @@ System.out.println( ffDbFile );
     {
         if( links != null && links.length > 0 )
         {
-            buttonsSetEnabled( false );
             resultsModel.startUrls();
             int added = 0;
             for( int i = 0; i < links.length; i++ )
