@@ -474,6 +474,7 @@ public class LinkProcessor extends Thread
         return tags;
     }
 
+// TODO 0: Create a version of this function which pulls multiple tags at once
     public Integer dbGetTagCount( String tagName, Tags selectedTags )
     {
         String whereClause = "tag_id = " + dbGetTagId( tagName );
@@ -676,22 +677,27 @@ public class LinkProcessor extends Thread
     {
         synchronized( dbLock )
         {
-            Statement stmt = null;
-            try
+            while( true )
             {
-                stmt = dbh.createStatement();
-                stmt.executeUpdate( sql );
-            }
-            catch( Exception ex )
-            {
-                if( ! ex.getMessage().matches( "^table \\S+ already exists$" ) )
-                    System.err.println( ex.getClass().getName() + 
-                                        ": " + ex.getMessage() );
-            }
-            finally
-            {
-                try { if( stmt != null ) { stmt.close(); } }
-                catch( Exception ex ) { ex.printStackTrace(); }
+                Statement stmt = null;
+                try
+                {
+                    stmt = dbh.createStatement();
+                    stmt.executeUpdate( sql );
+                    return;
+                }
+                catch( Exception ex )
+                {
+                    if( ! ex.getMessage().matches( "^table \\S+ already exists$" ) &&
+                        ! ex.getMessage().matches( ".*database is locked.*" ) )
+                        ex.printStackTrace();
+                }
+                finally
+                {
+                    try { if( stmt != null ) { stmt.close(); } }
+                    catch( Exception ex ) { ex.printStackTrace(); }
+                }
+                sleep( 200 );
             }
         }
     }
@@ -700,64 +706,87 @@ public class LinkProcessor extends Thread
     {
         synchronized( dbLock )
         {
-            PreparedStatement stmt = null;
-
-            String linkId = dbGetLinkId( linkKey );
-
-            try
+            while( true )
             {
-                if( linkId == null )
+                PreparedStatement stmt = null;
+
+                String linkId = dbGetLinkId( linkKey );
+
+                try
                 {
-                    stmt = dbh.prepareStatement(
-                        "INSERT INTO links( link_key, url, title ) " + 
-                        "VALUES( ?, ?, ? )" );
-                    stmt.setString( 1, linkKey );
-                    stmt.setString( 2, allUrls.get( linkKey ) );
-                    stmt.setString( 3, title );
+                    if( linkId == null )
+                    {
+                        stmt = dbh.prepareStatement(
+                            "INSERT INTO links( link_key, url, title ) " + 
+                            "VALUES( ?, ?, ? )" );
+                        stmt.setString( 1, linkKey );
+                        stmt.setString( 2, allUrls.get( linkKey ) );
+                        stmt.setString( 3, title );
+                    }
+                    else
+                    {
+                        stmt = dbh.prepareStatement(
+                            "UPDATE links SET url = ?, title = ? WHERE link_key = ?" );
+                        stmt.setString( 1, allUrls.get( linkKey ) );
+                        stmt.setString( 2, title );
+                        stmt.setString( 3, linkKey );
+                    }
+                    stmt.executeUpdate();
+                    return;
                 }
-                else
+                catch( SQLException ex )
                 {
-                    stmt = dbh.prepareStatement(
-                        "UPDATE links SET url = ?, title = ? WHERE link_key = ?" );
-                    stmt.setString( 1, allUrls.get( linkKey ) );
-                    stmt.setString( 2, title );
-                    stmt.setString( 3, linkKey );
+                    if( ! ex.getMessage().matches( ".*database is locked.*" ) )
+                        ex.printStackTrace();
                 }
-                stmt.executeUpdate();
-            }
-            catch( SQLException ex ) { ex.printStackTrace(); }
-            finally
-            {
-                try { if( stmt != null ) { stmt.close(); } }
-                catch( Exception ex ) { ex.printStackTrace(); }
+                finally
+                {
+                    try { if( stmt != null ) { stmt.close(); } }
+                    catch( Exception ex ) { ex.printStackTrace(); }
+                }
+                sleep( 200 );
             }
         }
     }
 
     private ArrayList<String[]> dbSelect( String query, int columns )
     {
-
         ArrayList<String[]> results = new ArrayList<String[]>();
 
         synchronized( dbLock )
         {
-            Statement stmt = null;
-            try
+            for( boolean success = false; ! success; )
             {
-                stmt = dbh.createStatement();
-                ResultSet rs = stmt.executeQuery( query );
-
-                while( rs.next() )
+                Statement stmt = null;
+                try
                 {
-                    String[] row = new String[ columns ];
-                    for( int j = 0; j < columns; j++ )
-                        row[ j ] = rs.getString( j + 1 );
-                    results.add( row );
+                    stmt = dbh.createStatement();
+                    ResultSet rs = stmt.executeQuery( query );
+
+                    while( rs.next() )
+                    {
+                        String[] row = new String[ columns ];
+                        for( int j = 0; j < columns; j++ )
+                            row[ j ] = rs.getString( j + 1 );
+                        results.add( row );
+                    }
+                    success = true;
                 }
-            }
-            catch( Exception ex )
-            {
-                ex.printStackTrace();
+                catch( Exception ex )
+                {
+                    if( ! ex.getMessage().matches( ".*database is locked.*" ) )
+                    {
+                        ex.printStackTrace();
+                        results = new ArrayList<String[]>();
+                    }
+                }
+                finally
+                {
+                    try { if( stmt != null ) { stmt.close(); } }
+                    catch( Exception ex ) { ex.printStackTrace(); }
+                }
+                if( ! success )
+                    sleep( 200 );
             }
         }
 
