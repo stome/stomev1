@@ -106,6 +106,11 @@ public class ResultsModel extends DefaultTableModel
         return allTags;
     }
 
+    public ArrayList<TagCount> getTagCounts( Tags selectedTags )
+    {
+        return linkProcessor.dbGetTagCounts( selectedTags );
+    }
+
     public Integer getTagCount( String tagName, Tags selectedTags )
     {
         return linkProcessor.dbGetTagCount( tagName, selectedTags );

@@ -1,5 +1,7 @@
 import net.miginfocom.swing.MigLayout;
 
+import java.util.ArrayList;
+
 import java.awt.Component;
 import java.awt.Toolkit;
 
@@ -58,19 +60,13 @@ public class TagsPanel extends JPanel
         Tags listTags = new Tags();
         listTags.add( 0, "" );
 
-        for( int i = 0; i < parentTags.size(); i++ )
+        ArrayList<TagCount> tagCounts = resultsModel.getTagCounts( selectedTags );
+        for( int i = 0; i < tagCounts.size(); i++ )
         {
-            String tagName = parentTags.get( i );
-            if( ! tagName.equals( "" ) )
-            {
-                Integer tagCount = resultsModel.getTagCount( tagName, selectedTags );
-                if( tagCount.intValue() > 0 )
-                {
-                    tagsModel.addRow(
-                        tagName, tagCount, TagsModel.COUNT_COL, TagsModel.SORT_DESC );
-                    listTags.add( tagName );
-                }
-            }
+            String tagName = tagCounts.get( i ).getTagName();
+            Integer tagCount = tagCounts.get( i ).getCount();
+            tagsModel.addRow( tagName, tagCount, TagsModel.COUNT_COL, TagsModel.SORT_DESC );
+            listTags.add( tagName );
         }
 
         // Create TagsList

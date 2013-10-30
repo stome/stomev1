@@ -474,7 +474,49 @@ public class LinkProcessor extends Thread
         return tags;
     }
 
-// TODO 0: Create a version of this function which pulls multiple tags at once
+    public ArrayList<TagCount> dbGetTagCounts( Tags selectedTags )
+    {
+        ArrayList<TagCount> tagCounts = new ArrayList<TagCount>();
+        String whereClause = "";
+        if( selectedTags.size() > 0 )
+        {
+            for( int i = 0; i < selectedTags.size(); i++ )
+            {
+                String tn = selectedTags.get( i );
+                whereClause += "tag_id = " + dbGetTagId( tn );
+                if( i < selectedTags.size() - 1 )
+                    whereClause += " OR ";
+            }
+        }
+
+        int tagCount = selectedTags.size();
+
+        String whereClause1 = "";
+        String whereClause2 = "";
+        String whereClause3 = "";
+        if( tagCount > 0 )
+        {
+            whereClause1 = "WHERE (" + whereClause + " )";
+            whereClause2 = "WHERE c = " + tagCount;
+            whereClause3 = " AND NOT ( " + whereClause.replaceAll( "tag_id", "id" ) + " )";
+        }
+
+        String sql =
+            "SELECT tag, COUNT(*) c2 FROM tags, link_tags WHERE id = tag_id AND link_id IN " +
+                "( SELECT link_id FROM " + 
+                    "( SELECT link_id, COUNT(*) c FROM link_tags " + whereClause1 + " GROUP BY link_id ) " + 
+                  whereClause2 + " ) " + whereClause3 + " GROUP BY tag ORDER BY c2 DESC";
+
+        ArrayList<String[]> results = dbSelect( sql, 2 );
+        for( int i = 0; i < results.size(); i++ )
+        {
+            Integer count = new Integer( Integer.parseInt( results.get( i )[ 1 ] ) );
+            tagCounts.add( new TagCount( results.get( i )[ 0 ] , count ) );
+        }
+
+        return tagCounts;
+    }
+
     public Integer dbGetTagCount( String tagName, Tags selectedTags )
     {
         String whereClause = "tag_id = " + dbGetTagId( tagName );
@@ -493,6 +535,8 @@ public class LinkProcessor extends Thread
 
         int tagCount = selectedTags.size() + 1;
 
+        // Adds up all the selected tags a link is related to
+        // If that count is the same as the number of selected tags, then that link is counted
         String sql = "SELECT COUNT(*) FROM ( " +
             "SELECT link_id, COUNT(*) c FROM link_tags WHERE ( " +
             whereClause + " ) GROUP BY link_id ) WHERE c = " + tagCount;

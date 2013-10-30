@@ -91,3 +91,25 @@ class TagRenderer extends DefaultTableCellRenderer
         return c;
     }
 }
+
+class TagCount
+{
+    private String tagName = null;
+    private Integer count  = null;
+
+    public TagCount( String tagName, Integer count )
+    {
+        this.tagName = tagName;
+        this.count   = count;
+    }
+
+    public String getTagName()
+    {
+        return tagName;
+    }
+
+    public Integer getCount()
+    {
+        return count;
+    }
+}
