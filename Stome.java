@@ -2,28 +2,32 @@
 STOME - Taking the Wold Wide Web by Stome
 
      VERSION 2.0
-TODO 1: 1.0 double-click views tag links
-TODO 2: 4.0 PAUSE/RESUME FETCHING
-TODO 3: 8.0 add search box and Find button for searching within selected Results
-TODO 4: 2.0 implement Open Links: open muliple links at once (popup menu)
-TODO 5: 8.0 export selection to database
-TODO 6: 8.0 export selection to spreadsheet
-TODO 7: 2.0 implement Refresh Shares (popup menu)
-TODO 8: 8.0 add links to local filesystem files
-TODO 8: 8.0 need to allow users to edit shares to make this useful
-TODO 9: 8.0 add bing as backup search in case google dies
+TODO 1: 8.0 add search box and Find button for searching within selected Results
+TODO 2: 2.0 implement Open Links: open muliple links at once (popup menu)
+TODO 3: 8.0 export selection to database
+TODO 4: 8.0 export selection to spreadsheet
 
      VERSION 3.0
-TODO 20: 40.0 implement Feed tab (twitter user updates)
-TODO 21: 40.0 implement Feed tab (youtube channel updates)
-TODO 22: 40.0 implement Feed tab (rss)
+TODO 10: 8.0 add links to local filesystem files
+TODO 11: 8.0 need to allow users to edit shares to make this useful
+
+     VERSION 4.0
+TODO 20: 1.0 double-click views tag links
+TODO 21: 2.0 implement Refresh Shares (popup menu)
+TODO 22: 8.0 add bing as backup search in case google dies
+TODO 23: 40.0 implement Feed tab (twitter user updates)
+TODO 24: 40.0 implement Feed tab (youtube channel updates)
+TODO 25: 40.0 implement Feed tab (rss)
 
 COMPLETE
+Added Stop button, to stop fetching, but keep links with share counts
 Implemented Add Tag. Add tag to multiple links at once (popup menu)
 Import links from Google Chrome feature added
 Import links from Firefox feature added
 */
 
+import java.awt.FlowLayout;
+import javax.swing.border.EmptyBorder;
 import net.miginfocom.swing.MigLayout;
 
 import java.util.ArrayList;
@@ -128,6 +132,7 @@ public class Stome
     private static JButton tagsViewButton       = new JButton( "View" );
 
     private static JButton clearLinksButton = new JButton( "Clear Links" );
+    private static JButton stopButton       = new JButton( "Stop!" );
 
     private static JTable resultsTable    = null;
     private static JTabbedPane tabbedPane = null;
@@ -760,9 +765,27 @@ System.out.println( ffDbFile );
             }
         } );
 
+        stopButton.addActionListener( new ActionListener() {
+            public void actionPerformed( ActionEvent e )
+            {
+                ResultsModel model = ( ResultsModel ) resultsTable.getModel();
+                model.stopFetch();
+            }
+        } );
+
+        FlowLayout slimLayout = new FlowLayout( FlowLayout.LEFT, 0, 0 );
+        JPanel buttonPane = new JPanel( slimLayout );
+
+        JPanel spacer = new JPanel();
+        spacer.setPreferredSize( new Dimension( 5, 0 ) );
+
+        buttonPane.add( clearLinksButton );
+        buttonPane.add( spacer );
+        buttonPane.add( stopButton );
+
         JPanel resultsPane = 
             new JPanel( new MigLayout( "", "[grow]", "[][grow][]" ) );
-        resultsPane.add( clearLinksButton, "align left" );
+        resultsPane.add( buttonPane, "align left" );
         resultsPane.add( fetchStatusLabel, "align right,wrap" );
         resultsPane.add( resultsScrollPane, "span,grow,wrap" );
         resultsPane.add( hoverUrlLabel, "span,grow" );

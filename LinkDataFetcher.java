@@ -134,7 +134,7 @@ public class LinkDataFetcher extends Thread
             {
                 DataFetcher fetcher = fetchers.get( i );
                 fetcher.interrupt();
-                while( fetcher.isAlive() && ! fetcher.isInterrupted() )
+                while( fetcher.isAlive() )
                 {
                     try { Thread.sleep( 200 ); }
                     catch( InterruptedException ex ) {}

@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -200,11 +201,12 @@ public class ResultsModel extends DefaultTableModel
 
     public void clearLinks()
     {
+        // Restart link processor
+
         linkProcessor.interrupt();
-        while( linkProcessor.isAlive() && ! linkProcessor.isInterrupted() )
+        while( linkProcessor.isAlive() )
         {
-            try { Thread.sleep( 200 ); }
-            catch( InterruptedException ex ) {}
+            try { Thread.sleep( 200 ); } catch( InterruptedException ex ) {}
         }
 
         linkProcessor = new LinkProcessor( this, dbFile );
@@ -212,6 +214,37 @@ public class ResultsModel extends DefaultTableModel
 
         setFetchStatus( "" );
         setRowCount( 0 );
+
+        Stome.buttonsSetEnabled( true );
+    }
+
+    public void stopFetch()
+    {
+        linkProcessor.interrupt();
+        while( linkProcessor.isAlive() )
+        {
+            try { Thread.sleep( 200 ); } catch( InterruptedException ex ) {}
+        }
+
+        ConcurrentHashMap<String,String> allUrls = linkProcessor.allUrls;
+        linkProcessor = new LinkProcessor( this, dbFile );
+
+        // Remove rows where share count was not fetched
+        for( int i = getRowCount() - 1; i >= 0; i-- )
+        {
+            Rating rating = (Rating) getValueAt( i, ResultsModel.SHARES_COL );
+            String linkKey = rating.getLinkKey();
+            if( rating.getShareCount() == -1 )
+            {
+                removeRow( i );
+                allUrls.remove( linkKey );
+            }
+        }
+
+        linkProcessor.allUrls = allUrls;
+        linkProcessor.completedCount = getRowCount();
+        linkProcessor.setFetchStatus( 0, 0 );
+        linkProcessor.start();
 
         Stome.buttonsSetEnabled( true );
     }

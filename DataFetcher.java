@@ -9,6 +9,8 @@ import java.net.URLConnection;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+/* Fetches facebook share count or title for given url, whichever type is specified */
+
 class DataFetcher extends Thread
 {
     private int type = -1;
@@ -80,6 +82,7 @@ class DataFetcher extends Thread
             }
         }
         catch( java.io.UnsupportedEncodingException ex ) {}
+        catch( java.lang.NullPointerException ex ) {}
 
         parentFetcher.processLinkData( keyIndex, linkKey, value );
 
@@ -106,6 +109,7 @@ class DataFetcher extends Thread
         try { Thread.sleep( milliseconds ); }
         catch( InterruptedException e )
         {
+            // Forces connection to abort
             conn.setConnectTimeout( 0 );
         }
     }

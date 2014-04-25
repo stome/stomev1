@@ -21,7 +21,7 @@ public class LinkProcessor extends Thread
     private ArrayList<String> linkKeys = new ArrayList<String>();
     private ConcurrentLinkedQueue<String> linkKeyQueue =
         new ConcurrentLinkedQueue<String>();
-    private ConcurrentHashMap<String,String> allUrls = null;
+    protected ConcurrentHashMap<String,String> allUrls = null;
     private ConcurrentHashMap<String,String> linkDomains = null;
 
     private Connection          dbh = null;
@@ -29,7 +29,7 @@ public class LinkProcessor extends Thread
 
     private boolean urlsLoaded = false;
     private int lastCompleted = -1;
-    private int completedCount = 0;
+    protected int completedCount = 0;
 
     private LinkDataFetcher shareCountFetcher = null;
     private LinkDataFetcher titleFetcher = null;
@@ -173,7 +173,6 @@ public class LinkProcessor extends Thread
                 if( linkKeysWOShares.size() == 0 )
                     setFetchStatus( 0, 0 );
 
-//                linkKeys.removeAllElements();
                 linkKeys.clear();
 
                 // Find the links in table which are missing shareCount or title
@@ -859,8 +858,7 @@ public class LinkProcessor extends Thread
             if( shareCountFetcher != null )
             {
                 shareCountFetcher.interrupt();
-                while(   shareCountFetcher.isAlive() &&
-                       ! shareCountFetcher.isInterrupted() )
+                while( shareCountFetcher.isAlive() )
                 {
                     try { Thread.sleep( 200 ); }
                     catch( InterruptedException ex ) {}
@@ -870,8 +868,7 @@ public class LinkProcessor extends Thread
             if( titleFetcher != null )
             {
                 titleFetcher.interrupt();
-                while(   titleFetcher.isAlive() &&
-                       ! titleFetcher.isInterrupted() )
+                while( titleFetcher.isAlive() )
                 {
                     try { Thread.sleep( 200 ); }
                     catch( InterruptedException ex ) {}
