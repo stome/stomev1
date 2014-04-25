@@ -204,7 +204,10 @@ public class ResultsModel extends DefaultTableModel
         // Restart link processor
 
         linkProcessor.interrupt();
-        while( linkProcessor.isAlive() )
+
+        // Wait up to 5 seconds for threads to stop
+        int waits = 0;
+        while( linkProcessor.isAlive() && waits++ < 25 )
         {
             try { Thread.sleep( 200 ); } catch( InterruptedException ex ) {}
         }
@@ -221,7 +224,10 @@ public class ResultsModel extends DefaultTableModel
     public void stopFetch()
     {
         linkProcessor.interrupt();
-        while( linkProcessor.isAlive() )
+
+        // Wait up to 5 seconds for threads to stop
+        int waits = 0;
+        while( linkProcessor.isAlive() && waits++ < 25 )
         {
             try { Thread.sleep( 200 ); } catch( InterruptedException ex ) {}
         }
