@@ -245,7 +245,10 @@ class ModifyTagListener implements ActionListener
             ( (Java2sAutoComboBox) modifyTagSelector ).setStrict( false );
         }
         else if( command.equals( "Delete Tag" ) )
+        {
             modifyTagSelector = new JComboBox<Object>( getSelectedTags() );
+        }
+        modifyTagSelector.setPrototypeDisplayValue( "XXXXXXXXXXXXXXXX" );
 
         JButton modifyButton = null;
         if( command.equals( "Add Tag" ) )
@@ -259,18 +262,28 @@ class ModifyTagListener implements ActionListener
             {
                 String selectedTag = (String) modifyTagSelector.getSelectedItem();
 
+                // Populate array with list of selected indices
+
+                int j = 0;
+                int[] selectedIndices = new int[ table.getRowCount() ];
+
                 int selectedRowCount = table.getSelectedRowCount();
                 for( int i = 0; i < table.getRowCount(); i++ )
                 {
                     if( selectedRowCount == 0 || table.isRowSelected( i ) )
                     {
                         int mIndex = table.convertRowIndexToModel( i );
-                        if( command.equals( "Add Tag" ) )
-                            resultsModel.addLinkTag( selectedTag, mIndex );
-                        else if( command.equals( "Delete Tag" ) )
-                            resultsModel.deleteLinkTag( selectedTag, mIndex );
+
+                        selectedIndices[ j++ ] = mIndex;
                     }
                 }
+
+                if( j < selectedIndices.length )
+                    selectedIndices[ j ] = -1;
+                if( command.equals( "Add Tag" ) )
+                    resultsModel.addLinkTags( selectedTag, selectedIndices );
+                else if( command.equals( "Delete Tag" ) )
+                    resultsModel.deleteLinkTags( selectedTag, selectedIndices );
 
                 if( command.equals( "Delete Tag" ) )
                 {

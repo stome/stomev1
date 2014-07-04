@@ -55,14 +55,14 @@ class DataFetcher extends Thread
                 dataUrl =
                     "http://api.facebook.com/method/fql.query?query=" +
                     "SELECT%20share_count%20FROM%20link_stat%20WHERE%20url=%27" +
-                    URLEncoder.encode( url, "UTF-8" ) + "%27";
+                    URLEncoder.encode( url.replace( "'", "\\'" ), "UTF-8" ) + "%27";
             }
             else if( type == Stome.TITLE )
             {
                 dataUrl =
                     "http://query.yahooapis.com/v1/public/yql?q=" +
                     "select%20*%20from%20html%20where%20url%3D%22" + 
-                    URLEncoder.encode( url, "UTF-8" ) + 
+                    URLEncoder.encode( url.replace( "'", "\\'" ), "UTF-8" ) + 
                     "%22%20and%20xpath%3D'%2F%2Ftitle'&format=xml";
             }
 

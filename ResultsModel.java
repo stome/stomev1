@@ -141,6 +141,73 @@ public class ResultsModel extends DefaultTableModel
         }
     }
 
+    public void deleteLinkTags( String tagName, int[] rowIndices )
+    {
+        ArrayList<String> linkKeys = new ArrayList<String>( rowIndices.length );
+
+        // Update GUI & compile list of link keys to delete from database
+        for( int i = 0; i < rowIndices.length; i++ )
+        {
+            int rowIndex = rowIndices[ i ];
+            if( rowIndex == -1 )
+                break;
+
+            Tags tags = (Tags) getValueAt( rowIndex, ResultsModel.TAGS_COL );
+            if( tags.contains( tagName ) )
+                tags.remove( tagName );
+
+            setValueAt( tags, rowIndex, ResultsModel.TAGS_COL );
+
+            Hyperlink link = (Hyperlink) getValueAt( rowIndex, ResultsModel.LINK_COL );
+            linkKeys.add( link.getLinkKey() );
+        }
+
+        // Update database
+        linkProcessor.dbDeleteLinkTag( linkKeys.toArray( new String[ linkKeys.size() ] ), tagName );
+    }
+
+    public void addLinkTags( String tagName, int[] rowIndices )
+    {
+        tagName = tagName.trim().toLowerCase().replaceAll( "\\s+", "-" );
+        if( ! tagName.equals( "" ) )
+        {
+            if( ! allTags.contains( tagName ) )
+            {
+                int reply = JOptionPane.showConfirmDialog( null, 
+                    "Do you want to create new tag \"" + tagName + "\"?",
+                    "Create new tag", JOptionPane.YES_NO_OPTION );
+                if( reply == JOptionPane.YES_OPTION )
+                    allTags.add( tagName );
+                else
+                    return;
+            }
+
+            ArrayList<Hyperlink> links = new ArrayList<Hyperlink>( rowIndices.length );
+
+            // Update GUI & compile list of links to add to database
+
+            for( int i = 0; i < rowIndices.length; i++ )
+            {
+                int rowIndex = rowIndices[ i ];
+                if( rowIndex == -1 )
+                    break;
+
+                Tags tags = (Tags) getValueAt( rowIndex, ResultsModel.TAGS_COL );
+                if( ! tags.contains( tagName ) )
+                    tags.add( tagName );
+
+                setValueAt( tags, rowIndex, ResultsModel.TAGS_COL );
+
+                Hyperlink link = (Hyperlink) getValueAt( rowIndex, ResultsModel.LINK_COL );
+                links.add( link );
+            }
+
+            // Update database
+            linkProcessor.dbAddLinks( links );
+            linkProcessor.dbAddLinkTag( links, tagName );
+        }
+    }
+
     public void deleteLinkTag( String tagName, int rowIndex )
     {
         Tags tags = (Tags) getValueAt( rowIndex, ResultsModel.TAGS_COL );

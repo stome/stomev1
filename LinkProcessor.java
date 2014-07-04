@@ -1,3 +1,4 @@
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +16,8 @@ import java.util.Map;
 
 import java.net.URI;
 import java.net.URL;
+
+import org.apache.commons.lang3.StringUtils;
 
 public class LinkProcessor extends Thread
 {
@@ -373,7 +376,159 @@ public class LinkProcessor extends Thread
         dbUpdateTitle( linkKey, title );
     }
 
-    // Can't add link tag if link wasn't already added via dbAddLink
+    private HashMap<String,String> getLinkIds( ArrayList<Hyperlink> links )
+    {
+        HashMap<String,String> linkIds = new HashMap<String,String>();
+        String[] linkKeysArray = new String[ links.size() ];
+        for( int i = 0; i < links.size(); i++ )
+            linkKeysArray[ i ] = links.get( i ).getLinkKey();
+        String sql = "SELECT id, link_key FROM links WHERE link_key IN ( '" + 
+            StringUtils.join( linkKeysArray, "', '" ) + "' )";
+        ArrayList<String[]> results = dbSelect( sql, 2 );
+        for( int i = 0; i < results.size(); i++ )
+            linkIds.put( results.get( i )[ 1 ], results.get( i )[ 0 ] );
+
+        return linkIds;
+    }
+
+    public void dbAddLinks( ArrayList<Hyperlink> links )
+    {
+        synchronized( dbLock )
+        {
+            boolean success = false;
+
+            while( ! success )
+            {
+                // Populate linkIds hash (linkKey => linkId)
+
+                HashMap<String,String> linkIds = getLinkIds( links );
+
+                PreparedStatement stmt1 = null;
+                PreparedStatement stmt2 = null;
+                boolean prevAutoCommit = true;
+                try
+                {
+                    stmt1 = dbh.prepareStatement(
+                        "INSERT INTO links( url, title, link_key ) " + 
+                        "VALUES( ?, ?, ? )" );
+                    stmt2 = dbh.prepareStatement(
+                        "UPDATE links SET url = ?, title = ? WHERE link_key = ?" );
+
+                    prevAutoCommit = dbh.getAutoCommit();
+                    dbh.setAutoCommit( false );
+
+                    for( int i = 0; i < links.size(); i++ )
+                    {
+                        Hyperlink link = links.get( i );
+                        String linkKey = link.getLinkKey();
+
+                        String linkId = linkIds.get( linkKey );
+
+                        if( linkId == null )
+                        {
+                            stmt1.setString( 1, allUrls.get( linkKey ) );
+                            stmt1.setString( 2, link.getTitle() );
+                            stmt1.setString( 3, linkKey );
+                            stmt1.addBatch();
+                        }
+                        else
+                        {
+                            stmt2.setString( 1, allUrls.get( linkKey ) );
+                            stmt2.setString( 2, link.getTitle() );
+                            stmt2.setString( 3, linkKey );
+                            stmt2.addBatch();
+                        }
+                    }
+
+                    stmt1.executeBatch();
+                    stmt2.executeBatch();
+                    dbh.commit();
+                    success = true;
+                }
+                catch( SQLException ex )
+                {
+                    if( ! ex.getMessage().matches( ".*database is locked.*" ) )
+                        ex.printStackTrace();
+                }
+                finally
+                {
+                    try
+                    {
+                        if( stmt1 != null )
+                            stmt1.close();
+                        if( stmt2 != null )
+                            stmt2.close();
+                        dbh.setAutoCommit( prevAutoCommit );
+                    }
+                    catch( Exception ex ) { ex.printStackTrace(); }
+                }
+                sleep( 200 );
+            }
+        }
+    }
+
+    public void dbAddLinkTag( ArrayList<Hyperlink> links, String newTag )
+    {
+        Tags tags = new Tags();
+        ArrayList<String[]> results = dbSelect(
+            "SELECT id FROM tags WHERE tag = '" + newTag + "'", 1 );
+
+        // Tag doesn't exist, create it
+        if( results.size() == 0 )
+        {
+            dbUpdate( "INSERT INTO tags( tag ) " + 
+                "VALUES( '" + newTag + "' )" );
+            results = dbSelect(
+                "SELECT id FROM tags WHERE tag = '" + newTag + "'", 1 );
+        }
+
+        String tagId = results.get( 0 )[ 0 ];
+
+        HashMap<String,String> linkIds = getLinkIds( links );
+
+        PreparedStatement stmt = null;
+        boolean prevAutoCommit = true;
+        try
+        {
+            stmt = dbh.prepareStatement(
+                "INSERT OR REPLACE INTO link_tags( link_id, tag_id ) " + 
+                "VALUES( ?, ? )" );
+            prevAutoCommit = dbh.getAutoCommit();
+            dbh.setAutoCommit( false );
+
+            for( int i = 0; i < links.size(); i++ )
+            {
+                Hyperlink link = links.get( i );
+                String linkKey = link.getLinkKey();
+                String linkId = linkIds.get( linkKey );
+                if( linkId != null )
+                {
+                    stmt.setString( 1, linkId );
+                    stmt.setString( 2, tagId );
+                    stmt.addBatch();
+                }
+            }
+            stmt.executeBatch();
+            dbh.commit();
+        }
+        catch( SQLException ex )
+        {
+            if( ! ex.getMessage().matches( ".*database is locked.*" ) )
+                ex.printStackTrace();
+        }
+        finally
+        {
+            try
+            {
+                if( stmt != null )
+                    stmt.close();
+                dbh.setAutoCommit( prevAutoCommit );
+            }
+            catch( Exception ex ) { ex.printStackTrace(); }
+        }
+    }
+
+    // Can't add link tag if link wasn't already added via dbAddLink or dbAddLinks
 
     public void dbAddLinkTag( String linkKey, String newTag )
     {
@@ -398,7 +553,7 @@ public class LinkProcessor extends Thread
 
             String tagId = results.get( 0 )[ 0 ];
 
-            dbUpdate( "INSERT INTO link_tags( link_id, tag_id ) " +
+            dbUpdate( "INSERT OR REPLACE INTO link_tags( link_id, tag_id ) " +
                 "VALUES( '" + linkId + "', '" + tagId + "' )" );
         }
     }
@@ -409,6 +564,30 @@ public class LinkProcessor extends Thread
         String sql = "DELETE FROM tags WHERE id = " + tagId;
         dbUpdate( sql );
     }
+
+    // Delete tag from multiple links
+
+    public void dbDeleteLinkTag( String[] linkKeysArray, String tagName )
+    {
+        String tagId = dbGetTagId( tagName );
+
+        String sql = "DELETE FROM link_tags WHERE tag_id = " + tagId +
+            " AND link_id IN ( SELECT id FROM links WHERE link_key IN ( '" + 
+            StringUtils.join( linkKeysArray, "', '" ) + "' ) )";
+        dbUpdate( sql );
+
+        // Check to see if any links are associated with tag, if not delete tag
+        ArrayList<String[]> results = dbSelect(
+            "SELECT COUNT(*) FROM link_tags WHERE tag_id = " + tagId, 1 );
+        if( results.size() > 0 && results.get( 0 ).length > 0 )
+        {
+            int count = Integer.parseInt( (String) results.get( 0 )[ 0 ] );
+            if( count == 0 )
+                dbDeleteTag( tagName );
+        }
+    }
+
+    // Delete tag from a single link
 
     public void dbDeleteLinkTag( String linkKey, String tagName )
     {

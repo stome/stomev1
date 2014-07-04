@@ -265,10 +265,16 @@ public class Stome
                         ArrayList <String> urlArrayList = doSearchJava( query );
 //                        ArrayList <String> urlArrayList = doSearchLocalPython( query );
 //                        ArrayList <String> urlArrayList = doSearchRemotePython( query );
-
-                        String[] links = urlArrayList.toArray(
-                            new String[ urlArrayList.size() ] );
-                        addLinks( links );
+                        if( urlArrayList.size() > 0 )
+                        {
+                            String[] links = urlArrayList.toArray(
+                                new String[ urlArrayList.size() ] );
+                            addLinks( links );
+                        }
+                        else
+                        {
+                            buttonsSetEnabled( true );
+                        }
                     }
                 };
                 t.start();
