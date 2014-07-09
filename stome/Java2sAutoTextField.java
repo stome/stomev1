@@ -1,3 +1,5 @@
+package stome;
+
 /* From http://java.sun.com/docs/books/tutorial/index.html */
 
 /*

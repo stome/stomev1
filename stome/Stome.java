@@ -1,3 +1,5 @@
+package stome;
+
 /*
 STOME - Taking the Wold Wide Web by Stome
 

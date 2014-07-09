@@ -1,3 +1,3 @@
-Main-Class: Stome
+Main-Class: stome.Stome
 SplashScreen-Image: stome.jpg
 

@@ -1,3 +1,5 @@
+package stome;
+
 import net.miginfocom.swing.MigLayout;
 
 import java.util.ArrayList;

@@ -1,3 +1,5 @@
+package stome;
+
 import net.miginfocom.swing.MigLayout;
 
 import java.util.HashMap;
@@ -30,6 +32,23 @@ import javax.swing.KeyStroke;
 import javax.swing.Action;
 import javax.swing.AbstractAction;
 import javax.swing.SwingConstants;
+import javax.swing.JFileChooser;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Hyperlink;
+import org.apache.poi.ss.usermodel.IndexedColors;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 class PopupMenu extends JPopupMenu
 {
@@ -40,17 +59,19 @@ class PopupMenu extends JPopupMenu
         int rowCount = table.getRowCount();
 
 //        JMenuItem openLinks      = new JMenuItem( "Open Links" );
-        JMenuItem copyLinks      = new JMenuItem( "Copy Links" );
-        JMenuItem copyTitles     = new JMenuItem( "Copy Titles" );
-        JMenuItem clearSelection = new JMenuItem( "Clear Selection" );
-        JMenuItem editTitles     = new JMenuItem( "Edit Titles" );
-        JMenuItem addTag         = new JMenuItem( "Add Tag" );
-        JMenuItem deleteTag      = new JMenuItem( "Delete Tag" );
+        JMenuItem copyLinks          = new JMenuItem( "Copy Links" );
+        JMenuItem copyTitles         = new JMenuItem( "Copy Titles" );
+        JMenuItem exportSelectionXLS = new JMenuItem( "Export Selection to XLS" );
+        JMenuItem clearSelection     = new JMenuItem( "Clear Selection" );
+        JMenuItem editTitles         = new JMenuItem( "Edit Titles" );
+        JMenuItem addTag             = new JMenuItem( "Add Tag" );
+        JMenuItem deleteTag          = new JMenuItem( "Delete Tag" );
 
         if( rowCount == 0 )
         {
             copyLinks.setEnabled( false );
             copyTitles.setEnabled( false );
+            exportSelectionXLS.setEnabled( false );
             clearSelection.setEnabled( false );
             editTitles.setEnabled( false );
             addTag.setEnabled( false );
@@ -60,6 +81,9 @@ class PopupMenu extends JPopupMenu
         CopyListener copyListener = new CopyListener( frame, table );
         copyLinks.addActionListener( copyListener );
         copyTitles.addActionListener( copyListener );
+
+        ExportListener exportListener = new ExportListener( frame, table );
+        exportSelectionXLS.addActionListener( exportListener );
 
         clearSelection.addActionListener( new ActionListener() {
             public void actionPerformed( ActionEvent e )
@@ -74,6 +98,7 @@ class PopupMenu extends JPopupMenu
 
         add( copyLinks );
         add( copyTitles );
+        add( exportSelectionXLS );
         addSeparator();
         add( clearSelection );
         addSeparator();
@@ -107,6 +132,104 @@ class PopupMenu extends JPopupMenu
     }
 }
 
+class ExportListener implements ActionListener
+{
+    private JFrame frame = null;
+    private JTable table = null;
+
+    public ExportListener( JFrame frame, JTable table )
+    {
+        this.frame = frame;
+        this.table = table;
+    }
+
+    public void actionPerformed( ActionEvent e )
+    {
+        File ssFile = new File( "Stome Selection.xls" );
+
+        JFileChooser jfs = new JFileChooser();
+        jfs.setSelectedFile( ssFile );
+        if( jfs.showSaveDialog( frame ) == JFileChooser.APPROVE_OPTION )
+            ssFile = jfs.getSelectedFile();
+        else
+            return;
+
+        Workbook wb = new HSSFWorkbook();
+        CreationHelper createHelper = wb.getCreationHelper();
+        Sheet sheet = wb.createSheet( "Sheet 1" );
+
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setBoldweight( Font.BOLDWEIGHT_BOLD );
+        style.setFont( font );
+
+        CellStyle hlink_style = wb.createCellStyle();
+        Font hlink_font = wb.createFont();
+        hlink_font.setUnderline( Font.U_SINGLE );
+        hlink_font.setColor( IndexedColors.BLUE.getIndex() );
+        hlink_style.setFont( hlink_font );
+
+        int selectedRowCount = table.getSelectedRowCount();
+        int j = 0;
+
+        String command = e.getActionCommand();
+        for( int i = 0; i < table.getRowCount(); i++ )
+        {
+            if( selectedRowCount == 0 || table.isRowSelected( i ) )
+            {
+                Row row = sheet.createRow( ( short ) j );
+
+                String shares = ( (Rating) table.getValueAt( i, ResultsModel.SHARES_COL ) ).toString();
+                String tags   = ( (Tags) table.getValueAt( i, ResultsModel.TAGS_COL ) ).toString();
+                stome.Hyperlink slink = 
+                    (stome.Hyperlink) table.getValueAt( i, ResultsModel.LINK_COL );
+
+                String url = slink.getURL().toString();
+                String title = slink.getTitle();
+                if( title == null || title.matches( "^\\s*$" ) )
+                    title = url;
+                org.apache.poi.ss.usermodel.Hyperlink link = 
+                    createHelper.createHyperlink( org.apache.poi.ss.usermodel.Hyperlink.LINK_URL );
+                link.setAddress( url );
+
+                Cell c0 = row.createCell( ( short ) 0 );
+                c0.setCellValue( shares );
+
+                Cell c1 = row.createCell( ( short ) 1 );
+                c1.setCellValue( tags );
+
+                Cell c2 = row.createCell( ( short ) 2 );
+                c2.setCellValue( title );
+                c2.setHyperlink( link );
+                c2.setCellStyle( hlink_style );
+
+                j++;
+            }
+        }
+
+        // Write spreadsheet to file
+        try
+        {
+            FileOutputStream fileOut = new FileOutputStream( ssFile );
+            wb.write( fileOut );
+            fileOut.close();
+        }
+        catch( FileNotFoundException ex )
+        {
+            // Shouldn't happen
+            ex.printStackTrace();
+        }
+        catch( IOException ex )
+        {
+            ex.printStackTrace();
+        }
+        catch( Exception ex )
+        {
+            ex.printStackTrace();
+        }
+    }
+}
+
 class CopyListener implements ActionListener
 {
     private JFrame frame = null;
@@ -130,8 +253,8 @@ class CopyListener implements ActionListener
         {
             if( selectedRowCount == 0 || table.isRowSelected( i ) )
             {
-                Hyperlink link = 
-                    (Hyperlink) table.getValueAt( i, ResultsModel.LINK_COL );
+                stome.Hyperlink link = 
+                    (stome.Hyperlink) table.getValueAt( i, ResultsModel.LINK_COL );
                 if( command.equals( "Copy Links" ) )
                     value += link.getURL().toString() + newLine;
                 else if( command.equals( "Copy Titles" ) && 
@@ -171,7 +294,7 @@ class EditTitlesListener implements ActionListener
         {
             if( selectedRowCount == 0 || table.isRowSelected( i ) )
             {
-                Hyperlink link = (Hyperlink) table.getValueAt(
+                stome.Hyperlink link = (stome.Hyperlink) table.getValueAt(
                     i, ResultsModel.LINK_COL );
 
                 final String url = link.getURL().toString();

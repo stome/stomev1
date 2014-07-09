@@ -1,3 +1,5 @@
+package stome;
+
 import java.awt.event.ItemEvent;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
