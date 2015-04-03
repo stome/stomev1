@@ -1,12 +1,32 @@
 Manifest-Version: 1.0
-Ant-Version: Apache Ant 1.8.2
-Created-By: 1.7.0_51-b13 (Oracle Corporation)
-Built-By: yegor
-Specification-Title: Apache POI
-Specification-Version: 3.10-FINAL
-Specification-Vendor: The Apache Software Foundation
-Implementation-Title: Apache POI
-Implementation-Version: 3.10-FINAL
-Implementation-Vendor-Id: org.apache.poi
-Implementation-Vendor: The Apache Software Foundation
+Export-Package: org.unbescape.properties;version="1.1.0.RELEASE",org.u
+ nbescape.java;version="1.1.0.RELEASE",org.unbescape.json;version="1.1
+ .0.RELEASE",org.unbescape.xml;version="1.1.0.RELEASE",org.unbescape.c
+ sv;version="1.1.0.RELEASE",org.unbescape.html;version="1.1.0.RELEASE"
+ ,org.unbescape.uri;version="1.1.0.RELEASE",org.unbescape.css;version=
+ "1.1.0.RELEASE",org.unbescape.javascript;version="1.1.0.RELEASE"
+Implementation-Title: unbescape
+Built-By: releases
+Tool: Bnd-2.1.0.20130426-122213
+Implementation-Vendor: The UNBESCAPE team
+Implementation-Vendor-Id: org.unbescape
+Specification-Title: unbescape
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-SymbolicName: org.unbescape
+X-Compile-Target-JDK: 1.5
+Implementation-Version: 1.1.0.RELEASE
+Specification-Vendor: The UNBESCAPE team
+Bundle-Name: unbescape
+Created-By: Apache Maven Bundle Plugin
+X-Compile-Source-JDK: 1.5
+Bundle-Vendor: The UNBESCAPE team
+Build-Jdk: 1.6.0_45
+Bundle-Version: 1.1.0.RELEASE
+Bnd-LastModified: 1406586973214
+Bundle-ManifestVersion: 2
+Bundle-Description: Advanced yet easy-to-use escape/unescape library f
+ or Java
+Specification-Version: 1.1.0.RELEASE
+Bundle-DocURL: http://www.unbescape.org
+Archiver-Version: Plexus Archiver
 

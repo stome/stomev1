@@ -11,6 +11,8 @@ import java.net.URLConnection;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import org.unbescape.html.HtmlEscape;
+
 /* Fetches facebook share count or title for given url, whichever type is specified */
 
 class DataFetcher extends Thread
@@ -81,6 +83,10 @@ class DataFetcher extends Thread
                 Matcher matcher = pattern.matcher( content );
                 if( matcher.find() )
                     value = matcher.group( 1 );
+                    if( type == Stome.TITLE )
+                    {
+                        value = HtmlEscape.unescapeHtml( value.trim() );
+                    }
             }
         }
         catch( java.io.UnsupportedEncodingException ex ) {}
