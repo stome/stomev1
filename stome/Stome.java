@@ -4,10 +4,8 @@ package stome;
 STOME - Taking the Wold Wide Web by Stome
 
      VERSION 2.0
-TODO 1: 8.0 add search box and Find button for searching within selected Results
-TODO 2: 2.0 implement Open Links: open muliple links at once (popup menu)
-TODO 3: 8.0 export selection to database
-TODO 4: 8.0 export selection to spreadsheet
+TODO 1: 2.0 implement Open Links: open muliple links at once (popup menu)
+TODO 2: 8.0 export selection to database
 
      VERSION 3.0
 TODO 10: 8.0 add links to local filesystem files
@@ -117,12 +115,16 @@ public class Stome
     public static final int SHARE_COUNT = 1;
     public static final int TITLE       = 2;
 
+    public static final int NEXT = 1;
+    public static final int PREV = 2;
+
     private static JFrame frame = new JFrame( "Search - " + Stome.APP_TITLE );
 
     private static ResultsModel resultsModel = null;
 
     private static JTextArea  linksInput    = new JTextArea( 20, 40 );
     private static JTextField keywordsInput = new JTextField();
+    private static JTextField findInput = new JTextField();
 
     private static JButton linksImportButton = new JButton( "Import" );
     private static JButton linksImportFromChromeButton = 
@@ -135,6 +137,9 @@ public class Stome
 
     private static JButton clearLinksButton = new JButton( "Clear Links" );
     private static JButton stopButton       = new JButton( "Stop!" );
+
+    private static JButton findPrevButton = new JButton( "Find Prev" );
+    private static JButton findNextButton = new JButton( "Find Next" );
 
     private static JTable resultsTable    = null;
     private static JTabbedPane tabbedPane = null;
@@ -407,6 +412,71 @@ System.out.println( ffDbFile );
                 addLinks( links );
             }
         } );
+
+        findPrevButton.addActionListener( new ActionListener()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                String findValue = findInput.getText().toLowerCase();
+                Stome.find( findValue, Stome.PREV );
+            }
+        } );
+
+        findNextButton.addActionListener( new ActionListener()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                String findValue = findInput.getText().toLowerCase();
+                Stome.find( findValue, Stome.NEXT );
+            }
+        } );
+
+        findInput.addActionListener( new ActionListener()
+        {
+            public void actionPerformed( ActionEvent e )
+            {
+                String findValue = findInput.getText().toLowerCase();
+                Stome.find( findValue, Stome.NEXT );
+            }
+        } );
+    }
+
+    private static void find( String findValue, int direction )
+    {
+        int row = resultsTable.getSelectedRow();
+        if( direction == Stome.PREV )
+            row--;
+        else if( direction == Stome.NEXT )
+            row++;
+
+        while( row >= 0 && row <= resultsTable.getRowCount() - 1 )
+        {
+            String tags = resultsTable.getValueAt( 
+                row, ResultsModel.TAGS_COL ).toString();
+            Hyperlink link = 
+                ( Hyperlink ) resultsTable.getValueAt( 
+                    row, ResultsModel.LINK_COL );
+            String linkTitle = link.getTitle().toLowerCase();
+            String linkURL = 
+                link.getURL().toString().toLowerCase();
+
+            if( tags.contains( findValue ) || 
+                linkTitle.contains( findValue ) || 
+                linkURL.contains( findValue ) )
+            {
+                // set the focus
+                resultsTable.setRowSelectionInterval( 
+                    row, row );
+                // set the view of the scroll in the location of the value
+                resultsTable.scrollRectToVisible( 
+                    resultsTable.getCellRect( row, 0, true ) );
+                return;
+            }
+            if( direction == Stome.PREV )
+                row--;
+            else if( direction == Stome.NEXT )
+                row++;
+        }
     }
 
     public static void addUrlsFromDbToArray(
@@ -798,13 +868,26 @@ System.out.println( ffDbFile );
         resultsPane.add( resultsScrollPane, "span,grow,wrap" );
         resultsPane.add( hoverUrlLabel, "span,grow" );
 
+        findInput.setPreferredSize(
+            new Dimension( findInput.getMaximumSize().width, 
+                           findInput.getPreferredSize().height ) );
+
+        JPanel findPane = new JPanel( new MigLayout( "", "[grow][][]", "[]" ) );
+        findPane.add( findInput, "align left" );
+        findPane.add( findPrevButton, "align right" );
+        findPane.add( findNextButton, "align right" );
+
         JSplitPane sp = new JSplitPane( JSplitPane.VERTICAL_SPLIT );
         sp.add( tabbedPane );
         sp.add( resultsPane );
         sp.setResizeWeight( 0.33d );
+
+        JPanel framePane = new JPanel( new MigLayout( "", "[grow]", "[][]" ) );
+        framePane.add( sp, "wrap" );
+        framePane.add( findPane );
         
         frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-        frame.getContentPane().add( sp );
+        frame.getContentPane().add( framePane );
 
         frame.pack();
         frame.setSize( new Dimension( 640, 480 ) );
