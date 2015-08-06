@@ -56,10 +56,19 @@ class DataFetcher extends Thread
             String dataUrl = null;
             if( type == Stome.SHARE_COUNT )
             {
+                // Give Youtube video urls with the same id the same share count
+                String shareUrl = url;
+                if( url.matches( ".*youtube.com/watch.*[?&]v=.*" ) )
+                {
+                    String youtubeId = url.replaceAll( 
+                        ".*youtube.com/watch\\?.*v=([-_0-9a-zA-Z]{11}).*", "$1" );
+                    shareUrl = "https://www.youtube.com/watch?v=" + youtubeId;
+                }
+
                 dataUrl =
                     "http://api.facebook.com/method/fql.query?query=" +
                     "SELECT%20share_count%20FROM%20link_stat%20WHERE%20url=%27" +
-                    URLEncoder.encode( url.replace( "'", "\\'" ), "UTF-8" ) + "%27";
+                    URLEncoder.encode( shareUrl.replace( "'", "\\'" ), "UTF-8" ) + "%27";
             }
             else if( type == Stome.TITLE )
             {

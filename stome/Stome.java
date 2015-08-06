@@ -591,15 +591,14 @@ System.out.println( ffDbFile );
                         {
                             JSONObject jresult = (JSONObject) jresults.get( i );
                             String url = (String) jresult.get( "unescapedUrl" );
+                            url = url.replaceAll( 
+                                "^http://www.youtube.com(.*)", 
+                                "https://www.youtube.com$1" );
                             urlArrayList.add( url );
                         }
                     }
                     else
-                    {
-//System.err.println( json );
-//System.err.println( searchUrl );
                         break;
-                    }
                 }
             }
             catch( org.json.simple.parser.ParseException ex ) {}
@@ -635,6 +634,16 @@ System.out.println( ffDbFile );
                 if( urlIsValid( links[ i ] ) )
                 {
                     if( resultsModel.addUrl( links[ i ] ) )
+                        added++;
+                }
+
+                // Insert valid Youtube links when invalid links are found
+                if( links[ i ].matches( "http://www.youtube.com.*" ) )
+                {
+                    String youtubeLink = links[ i ].replaceAll( 
+                        "^http://www.youtube.com(.*)", 
+                        "https://www.youtube.com$1" );
+                    if( resultsModel.addUrl( youtubeLink ) )
                         added++;
                 }
             }

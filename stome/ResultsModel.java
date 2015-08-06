@@ -435,20 +435,33 @@ class HyperlinkRenderer extends DefaultTableCellRenderer
             title = link.getTitle();
         }
 
+        boolean linkGood = true;
+        if( url.matches( "^http://www.youtube.com.*" ) )
+            linkGood = false;
+
         if( ! table.isEditing() && this.row == row && 
             this.col == column && this.isRollover )
         {
-            setText( "<html><u><font color='blue'>" + title + "</font></u></html>" );
+            if( linkGood )
+                setText( "<html><u><font color='blue'>" + title + "</font></u></html>" );
+            else
+                setText( "<html><u><font color='red'>" + title + "</font></u></html>" );
             hoverUrlLabel.setText( url );
         }
         else if( hasFocus )
         {
-            setText( "<html><font color='blue'>" + title + "</font></u></html>" );
+            if( linkGood )
+                setText( "<html><font color='blue'>" + title + "</font></u></html>" );
+            else
+                setText( "<html><font color='red'>" + title + "</font></u></html>" );
             hoverUrlLabel.setText( url );
         }
         else
         {
-            setText( title );
+            if( linkGood )
+                setText( "<html><font color='black'>" + title + "</font></html>" );
+            else
+                setText( "<html><font color='red'>" + title + "</font></html>" );
         }
 
         ArrayList<String> matchList = new ArrayList<String>();
