@@ -10,6 +10,7 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.WindowEvent;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
@@ -80,6 +81,8 @@ class PopupMenu extends JPopupMenu
 
         CopyListener copyListener = new CopyListener( frame, table );
         copyLinks.addActionListener( copyListener );
+        copyLinks.setAccelerator( ( KeyStroke.getKeyStroke( 
+            KeyEvent.VK_C, InputEvent.CTRL_DOWN_MASK ) ) );
         copyTitles.addActionListener( copyListener );
 
         ExportListener exportListener = new ExportListener( frame, table );
@@ -243,30 +246,7 @@ class CopyListener implements ActionListener
 
     public void actionPerformed( ActionEvent e )
     {
-        String newLine = String.format( "%n" );
-
-        String value = "";
-        int selectedRowCount = table.getSelectedRowCount();
-
-        String command = e.getActionCommand();
-        for( int i = 0; i < table.getRowCount(); i++ )
-        {
-            if( selectedRowCount == 0 || table.isRowSelected( i ) )
-            {
-                stome.Hyperlink link = 
-                    (stome.Hyperlink) table.getValueAt( i, ResultsModel.LINK_COL );
-                if( command.equals( "Copy Links" ) )
-                    value += link.getURL().toString() + newLine;
-                else if( command.equals( "Copy Titles" ) && 
-                         link.getTitle() != null )
-                    value += link.getTitle() + newLine;
-            }
-        }
-
-        StringSelection stringSelection = new StringSelection( value );
-        Clipboard clipboard = 
-            Toolkit.getDefaultToolkit().getSystemClipboard();
-        clipboard.setContents( stringSelection, null );
+        Stome.copyToClipboard( table, e.getActionCommand() );
     }
 }
 
